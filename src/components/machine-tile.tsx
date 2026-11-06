@@ -65,14 +65,15 @@ export function MachineTile({
   return (
     <motion.div
       layout
-      className={cn("glass glass-sheen relative flex flex-col gap-3 overflow-hidden rounded-3xl p-4", className)}
+      className={cn("@container glass glass-sheen relative flex flex-col gap-3 overflow-hidden rounded-3xl p-3.5 sm:p-4", className)}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-aqua/25 to-primary/25 text-primary">
+      {/* Cartão estreito (2 colunas no celular): selo vai para a linha de baixo, sem cortar. */}
+      <div className="flex flex-col gap-2 @[15rem]:flex-row @[15rem]:items-start @[15rem]:justify-between">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-aqua/25 to-primary/25 text-primary @[15rem]:size-11">
             <Icon className="size-5" aria-hidden />
           </span>
-          <div className="leading-tight">
+          <div className="min-w-0 leading-tight">
             <p className="text-base font-semibold">{machine.code}</p>
             <p className="text-xs text-muted-foreground">
               {machine.kind === "washer" ? "Lavadora" : "Secadora"}
@@ -80,7 +81,12 @@ export function MachineTile({
             </p>
           </div>
         </div>
-        <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-1 text-[0.7rem] font-semibold", TONE[status])}>
+        <span
+          className={cn(
+            "inline-flex w-fit shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[0.7rem] font-semibold whitespace-nowrap",
+            TONE[status],
+          )}
+        >
           <StatusIcon className="size-3.5" aria-hidden />
           {STATUS_LABEL[status]}
         </span>
@@ -99,7 +105,7 @@ export function MachineTile({
         <p className="rounded-xl bg-destructive/8 px-2.5 py-1.5 text-xs text-destructive">{machine.last_error}</p>
       ) : null}
       {detailed ? (
-        <p className="text-[0.7rem] text-muted-foreground">
+        <p className="text-[0.7rem] break-words text-muted-foreground">
           {machine.brand} {machine.model} · R$ {(machine.price_cents / 100).toFixed(2).replace(".", ",")} · {machine.cycle_minutes} min
         </p>
       ) : null}

@@ -17,7 +17,7 @@ export function RankedBars({ data, label }: { data: { name: string; value: numbe
       <BarChart data={data} layout="vertical" margin={{ left: 4, right: 36, top: 4, bottom: 4 }} barCategoryGap={6}>
         <CartesianGrid horizontal={false} strokeOpacity={0.35} />
         <XAxis type="number" hide allowDecimals={false} />
-        <YAxis type="category" dataKey="name" width={150} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+        <YAxis type="category" dataKey="name" width={118} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
         <ChartTooltip cursor={{ fillOpacity: 0.06 }} content={<ChartTooltipContent hideIndicator />} />
         <Bar dataKey="value" fill="var(--color-value)" radius={[0, 4, 4, 0]} maxBarSize={22}>
           <LabelList dataKey="value" position="right" className="fill-foreground" fontSize={12} />

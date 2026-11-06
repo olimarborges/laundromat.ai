@@ -44,7 +44,7 @@ async function CaseDetail({ params }: { params: Promise<{ id: string }> }) {
   const evidence = kase.evidence as Evidence;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1.25fr_1fr]">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_1fr] [&>*]:min-w-0">
       <div className="space-y-4">
         <GlassCard tone="strong" padding="lg" className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">

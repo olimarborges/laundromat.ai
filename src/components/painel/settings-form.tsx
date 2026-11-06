@@ -20,7 +20,7 @@ export function SettingsForm({ store }: { store: StoreRow }) {
 
   return (
     <form
-      className="grid gap-4 xl:grid-cols-2"
+      className="grid grid-cols-1 gap-4 xl:grid-cols-2 [&>*]:min-w-0"
       onSubmit={(e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);

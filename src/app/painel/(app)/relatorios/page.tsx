@@ -93,7 +93,7 @@ async function Reports() {
         <StatCard label="Compensado" value={formatBRL(compensated)} hint="Antes: R$ 51–150/mês" icon={<Gift className="size-4" />} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 [&>*]:min-w-0">
         <GlassCard tone="strong" padding="lg" className="space-y-3">
           <div>
             <h2 className="font-semibold">Problemas e dúvidas mais comuns</h2>
@@ -115,7 +115,7 @@ async function Reports() {
           </details>
         </GlassCard>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <GlassCard tone="strong" padding="lg" className="space-y-3">
             <div>
               <h2 className="font-semibold">Quem resolveu, por semana</h2>

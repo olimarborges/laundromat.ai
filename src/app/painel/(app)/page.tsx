@@ -24,7 +24,7 @@ export default function PanelHome() {
       <Suspense fallback={<GridSkeleton />}>
         <Kpis />
       </Suspense>
-      <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
         <section aria-labelledby="loja" className="space-y-3">
           <h2 id="loja" className="px-1 text-sm font-semibold text-muted-foreground">
             Loja agora

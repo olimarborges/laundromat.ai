@@ -98,7 +98,7 @@ export function StoreFinder({ stores }: { stores: PublicStore[] }) {
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_1fr] [&>*]:min-w-0">
       {last ? (
         <Link
           href={`/${last.slug}`}
