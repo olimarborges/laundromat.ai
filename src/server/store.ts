@@ -1,21 +1,18 @@
 import "server-only";
-import { cacheLife, cacheTag } from "next/cache";
+import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { env, hasServerSupabase } from "@/lib/env";
 import type { StoreHours } from "@/domain/store-hours";
 import type { StoreRow } from "@/server/types";
 
-/** Configuração da loja (cacheada; o painel invalida com updateTag("store")). */
-export async function getStore(slug: string = env.storeSlug): Promise<StoreRow> {
-  "use cache";
-  cacheTag("store");
-  cacheLife("minutes");
+/** Configuração da loja (deduplicada por requisição). */
+export const getStore = cache(async (slug: string = env.storeSlug): Promise<StoreRow> => {
   // Sem Supabase (ex.: build de CI): loja padrão; os layouts mostram o aviso de configuração.
   if (!hasServerSupabase()) return FALLBACK_STORE;
   const { data, error } = await createAdminClient().from("stores").select("*").eq("slug", slug).single();
   if (error || !data) throw new Error(`Loja "${slug}" não encontrada. Rode as migrations e o seed.`);
   return data as StoreRow;
-}
+});
 
 const FALLBACK_STORE: StoreRow = {
   id: "00000000-0000-4000-8000-000000000001",

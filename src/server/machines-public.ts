@@ -1,6 +1,5 @@
 import "server-only";
 import { hasServerSupabase } from "@/lib/env";
-import { cacheLife, cacheTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface MachineOption {
@@ -11,9 +10,6 @@ export interface MachineOption {
 
 /** Só código, nome e tipo (sem estado): seguro para visitantes. */
 export async function getMachineOptions(storeId: string): Promise<MachineOption[]> {
-  "use cache";
-  cacheTag("machines-config");
-  cacheLife("hours");
   if (!hasServerSupabase()) return [];
   const { data } = await createAdminClient()
     .from("machines")

@@ -6,7 +6,7 @@ Atendente virtual para lavanderia self-service. O cliente abre pelo **QR Code** 
 
 ## Stack
 
-- **Next.js 16.4** (App Router, Cache Components + Partial Prerendering, Server Actions, `proxy.ts`, React Compiler), **React 19.3**, TypeScript estrito
+- **Next.js 16.4** (App Router, Server Actions, `proxy.ts`, React Compiler) rodando em **Cloudflare Workers** via OpenNext, **React 19.3**, TypeScript estrito
 - **Tailwind CSS 4.3** + **shadcn/ui** + camada própria de **liquid glass** (tokens em `src/app/globals.css`), **Motion**, **lucide-react**
 - **Supabase**: Postgres com RLS, Auth (Google, magic link, senha do lojista), Realtime, Storage
 - **AI SDK 7** + **Claude** (`@ai-sdk/anthropic`) com tools tipadas (Zod 4). Sem chave, roda em **modo roteiro**
@@ -25,7 +25,7 @@ cp .env.example .env.local   # preencha Supabase (e, se quiser, ANTHROPIC_API_KE
 3. **Auth** (Supabase → Authentication): adicione `http://localhost:3000/auth/callback` e a URL de produção em *Redirect URLs*; para o Google, ative o provedor com o Client ID/Secret.
 4. `pnpm dev` e abra http://localhost:3000 (cliente) e http://localhost:3000/painel (lojista).
 
-Preencha o `.env.local` **antes** do `pnpm build`: com Cache Components, parte dos dados (loja, máquinas, respostas) entra no HTML estático e é revalidada depois.
+As páginas são renderizadas sob demanda (dados sempre ao vivo do Supabase).
 
 ## Roteiro da demonstração
 
@@ -68,3 +68,32 @@ design-system/         design system gerado com a skill ui-ux-pro-max
 - Câmeras Intelbras: envio de foto a cada 30 s, análise com rostos borrados (e câmeras mais próximas das máquinas, como o lojista sugeriu).
 - WhatsApp Cloud API para os avisos ao lojista; SMS real para o código de confirmação.
 - Revisão jurídica (LGPD, cartaz da loja, prazo de guarda das imagens).
+
+## Deploy no Cloudflare (Workers + OpenNext)
+
+O app roda em Cloudflare Workers com o adaptador [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) (`wrangler.jsonc`, `open-next.config.ts`).
+
+> `cacheComponents`/`partialPrefetching` estão desligados no `next.config.ts`: no Workers eles ainda travam as páginas ([opennextjs-cloudflare#1450](https://github.com/opennextjs/opennextjs-cloudflare/issues/1450)). Religue quando houver suporte.
+
+**Variáveis**
+- **No build** (embutidas no bundle): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- **Segredos do Worker** (em tempo de execução): `SUPABASE_SERVICE_ROLE_KEY` e, opcional, `ANTHROPIC_API_KEY`.
+- **Variáveis públicas**: já estão em `wrangler.jsonc` (`vars`).
+
+**Opção A, deploy automático pelo GitHub (recomendado)**: Cloudflare → *Workers & Pages* → *Create* → *Import a repository* → escolha este repositório (branch `main`).
+1. Build command: `pnpm exec opennextjs-cloudflare build`. Deploy command: `pnpm exec opennextjs-cloudflare deploy`.
+2. Em *Settings → Build → Variables*, adicione as duas `NEXT_PUBLIC_*`.
+3. Em *Settings → Variables and Secrets*, adicione os segredos.
+4. Cada push na `main` publica sozinho, e o build roda em Linux (evita as limitações do OpenNext no Windows).
+
+**Opção B, pela máquina**:
+
+```bash
+pnpm exec wrangler login        # com a conta Cloudflare certa (confira com: pnpm exec wrangler whoami)
+pnpm exec wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+pnpm cf:deploy
+```
+
+No Windows, o build do OpenNext usa `nodeLinker: hoisted` (em `pnpm-workspace.yaml`) para não depender de symlinks. Para testar localmente no runtime do Workers, rode `pnpm cf:preview` (lê os segredos de `.dev.vars`).
+
+**Depois do primeiro deploy**: em Supabase → Authentication → URL Configuration, coloque a URL `*.workers.dev` (ou o domínio próprio) em *Site URL* e adicione `https://SEU-DOMINIO/auth/callback` em *Redirect URLs*.

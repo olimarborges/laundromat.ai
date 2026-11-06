@@ -12,11 +12,15 @@
     "test:e2e": "playwright test",
     "db:push": "supabase db push --include-seed",
     "db:types": "supabase gen types typescript --linked > src/lib/supabase/database.types.ts",
-    "create-owner": "node --env-file=.env.local scripts/create-owner.mjs"
+    "create-owner": "node --env-file=.env.local scripts/create-owner.mjs",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.96",
     "@ai-sdk/react": "^4.0.166",
+    "@opennextjs/cloudflare": "1.20.16",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "ai": "^7.0.162",
@@ -54,7 +58,8 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "wrangler": "4.158.0"
   },
   "packageManager": "pnpm@12.11.2"
 }

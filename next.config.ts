@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Cache Components / Partial Prefetching desligados: ainda travam no Cloudflare Workers
+  // (opennextjs-cloudflare#1450). Religar quando o OpenNext suportar.
   reactCompiler: true,
   turbopack: {
     rules: {

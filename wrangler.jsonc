@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "laundromat-easywash",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      // Auto-referência exigida pelo OpenNext (o nome precisa ser igual ao "name" acima)
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "laundromat-easywash"
+    }
+  ],
+  "observability": { "enabled": true },
+  // Variáveis públicas (não secretas). Os segredos vão por: wrangler secret put <NOME>
+  "vars": {
+    "NEXT_PUBLIC_STORE_SLUG": "easywash",
+    "INTEGRATIONS_MODE": "mock",
+    "ANTHROPIC_MODEL": "claude-sonnet-5-5"
+  }
+}

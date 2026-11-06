@@ -1,5 +1,5 @@
 "use server";
-import { refresh, updateTag } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOwner } from "@/server/auth";
@@ -28,7 +28,7 @@ export async function simulate(scenario: ScenarioId, machineCode?: string): Prom
   const machine = machineCode ? await getMachineByCode(store.id, machineCode) : null;
   if (def.needsMachine && !machine) return { ok: false, message: "Escolha uma máquina." };
   await runScenario(store, scenario, machine);
-  updateTag("store");
+  revalidatePath("/", "layout");
   refresh();
   return { ok: true, message: `${def.title}${machine ? ` · ${machine.code}` : ""}: simulado.` };
 }
@@ -153,7 +153,7 @@ export async function saveKbArticle(input: z.input<typeof kbSchema>): Promise<Re
     ? await db.from("kb_articles").update(row).eq("id", id).eq("store_id", store.id)
     : await db.from("kb_articles").insert(row);
   if (error) return { ok: false, message: error.message };
-  updateTag("kb");
+  revalidatePath("/", "layout");
   refresh();
   return { ok: true, message: "Resposta salva. O atendente já usa a nova versão." };
 }
@@ -161,7 +161,7 @@ export async function saveKbArticle(input: z.input<typeof kbSchema>): Promise<Re
 export async function toggleKbArticle(id: string, active: boolean): Promise<Result> {
   const { store } = await ownerStore();
   await createAdminClient().from("kb_articles").update({ active }).eq("id", id).eq("store_id", store.id);
-  updateTag("kb");
+  revalidatePath("/", "layout");
   refresh();
   return { ok: true, message: active ? "Resposta ativada." : "Resposta desativada." };
 }
@@ -200,7 +200,7 @@ export async function saveSettings(input: z.input<typeof settingsSchema>): Promi
     })
     .eq("id", store.id);
   if (error) return { ok: false, message: error.message };
-  updateTag("store");
+  revalidatePath("/", "layout");
   refresh();
   return { ok: true, message: "Configurações salvas." };
 }
