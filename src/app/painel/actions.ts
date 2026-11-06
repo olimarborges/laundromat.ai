@@ -3,7 +3,7 @@ import { refresh, revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOwner } from "@/server/auth";
-import { getStore } from "@/server/store";
+import { getStoreById } from "@/server/store";
 import { getIntegrations } from "@/server/integrations";
 import { getMachineByCode } from "@/server/support";
 import { runScenario, SCENARIOS, type ScenarioId } from "@/server/simulator";
@@ -12,8 +12,7 @@ import { runScenario, SCENARIOS, type ScenarioId } from "@/server/simulator";
 
 async function ownerStore() {
   const user = await requireOwner();
-  const store = await getStore();
-  if (store.id !== user.profile.store_id) throw new Error("Sem permissão para esta loja.");
+  const store = await getStoreById(user.profile.store_id as string);
   return { user, store };
 }
 

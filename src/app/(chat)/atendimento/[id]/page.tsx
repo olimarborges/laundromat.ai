@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { ChatView } from "@/components/chat/chat-view";
 import { getConversationForViewer, getMachineById, loadMessages } from "@/server/support";
+import { getStoreById } from "@/server/store";
 
 export const metadata = { title: "Atendimento" };
 
@@ -30,12 +31,18 @@ async function Chat({
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const conv = await getConversationForViewer(id);
   if (!conv) notFound();
-  const [messages, machine] = await Promise.all([loadMessages(conv.id), getMachineById(conv.machine_id)]);
+  const [messages, machine, store] = await Promise.all([
+    loadMessages(conv.id),
+    getMachineById(conv.machine_id),
+    getStoreById(conv.store_id),
+  ]);
   const first = typeof sp.primeira === "string" ? sp.primeira.slice(0, 200) : undefined;
 
   return (
     <ChatView
       conversationId={conv.id}
+      storeSlug={store.slug}
+      storeName={store.name}
       initialMessages={messages}
       visitorName={conv.visitor_name}
       machineLabel={machine?.label ?? null}

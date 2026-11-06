@@ -12,6 +12,16 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Endereços antigos (antes de multi-lavanderia) → loja padrão.
+  async redirects() {
+    const loja = process.env.NEXT_PUBLIC_STORE_SLUG ?? "easywash";
+    return [
+      { source: "/m/:codigo", destination: `/${loja}/m/:codigo`, permanent: false },
+      { source: "/ajuda", destination: `/${loja}/ajuda`, permanent: false },
+      { source: "/duvidas", destination: `/${loja}/duvidas`, permanent: false },
+      { source: "/maquinas", destination: `/${loja}/maquinas`, permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

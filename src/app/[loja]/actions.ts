@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { getStore } from "@/server/store";
+import { getStoreBySlug } from "@/server/store";
 import { getSessionUser } from "@/server/auth";
 import { ensureVisitorToken } from "@/server/visitor";
 import { createConversation, getMachineByCode } from "@/server/support";
@@ -21,6 +21,7 @@ const schema = z.object({
   machine: z.string().trim().max(4).optional(),
   problem: z.string().optional(),
   voice: z.string().optional(),
+  store: z.string().trim().min(1).max(60),
 });
 
 export async function startConversation(_prev: StartState, formData: FormData): Promise<StartState> {
@@ -29,9 +30,10 @@ export async function startConversation(_prev: StartState, formData: FormData): 
     const fe = z.flattenError(parsed.error).fieldErrors;
     return { fieldErrors: { name: fe.name?.[0], phone: fe.phone?.[0] } };
   }
-  const { name, phone, machine: code, problem, voice } = parsed.data;
+  const { name, phone, machine: code, problem, voice, store: slug } = parsed.data;
 
-  const store = await getStore();
+  const store = await getStoreBySlug(slug);
+  if (!store || !store.active) return { error: "Lavanderia não encontrada." };
   const [machine, visitorToken, user] = await Promise.all([
     code ? getMachineByCode(store.id, code) : Promise.resolve(null),
     ensureVisitorToken(),

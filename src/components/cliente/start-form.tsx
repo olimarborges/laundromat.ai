@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useState } from "react";
 import { ArrowRight, Loader2, Mic, WashingMachine, Wind } from "lucide-react";
-import { startConversation, type StartState } from "@/app/(cliente)/actions";
+import { startConversation, type StartState } from "@/app/[loja]/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProblemIcon } from "@/components/icon";
@@ -18,6 +18,7 @@ function maskPhone(v: string) {
 }
 
 export function StartForm({
+  storeSlug,
   machines,
   defaultMachine,
   defaultProblem,
@@ -25,6 +26,7 @@ export function StartForm({
   defaultPhone,
   voice,
 }: {
+  storeSlug: string;
   machines: MachineOption[];
   defaultMachine?: string;
   defaultProblem?: string;
@@ -39,6 +41,7 @@ export function StartForm({
 
   return (
     <form action={action} className="space-y-5" noValidate>
+      <input type="hidden" name="store" value={storeSlug} />
       <input type="hidden" name="machine" value={machine} />
       <input type="hidden" name="problem" value={problem} />
       <input type="hidden" name="voice" value={voice ? "1" : ""} />

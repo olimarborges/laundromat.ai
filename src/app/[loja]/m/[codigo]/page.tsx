@@ -3,36 +3,35 @@ import { notFound } from "next/navigation";
 import { QrCode } from "lucide-react";
 import { GlassCard } from "@/components/glass/glass-card";
 import { FormSkeleton, StartFormLoader } from "@/components/cliente/start-form-loader";
-import { getStore } from "@/server/store";
+import { requireStore } from "@/server/store";
+import type { StoreRow } from "@/server/types";
 import { getMachineOptions } from "@/server/machines-public";
 
 /** Destino do QR Code colado em cada máquina (ex.: /m/L1). */
-export default function MachineQrPage({ params, searchParams }: PageProps<"/m/[codigo]">) {
+export default async function MachineQrPage({ params, searchParams }: PageProps<"/[loja]/m/[codigo]">) {
+  const { loja, codigo } = await params;
+  const store = await requireStore(loja);
+  const machine = await resolve(store, codigo);
   return (
     <div className="space-y-4">
-      <Suspense fallback={<div className="h-14" />}>
-        <MachineHeader params={params} />
-      </Suspense>
+      <MachineHeader machine={machine} />
       <GlassCard tone="strong" padding="lg">
         <Suspense fallback={<FormSkeleton />}>
-          <MachineForm params={params} searchParams={searchParams} />
+          <StartFormLoader store={store} searchParams={searchParams} machineCode={machine.code} />
         </Suspense>
       </GlassCard>
     </div>
   );
 }
 
-async function resolve(params: Promise<{ codigo: string }>) {
-  const { codigo } = await params;
-  const store = await getStore();
+async function resolve(store: StoreRow, codigo: string) {
   const machines = await getMachineOptions(store.id);
-  const m = machines.find((x) => x.code.toLowerCase() === codigo.toLowerCase());
+  const m = machines.find((x) => x.code.toLowerCase() === decodeURIComponent(codigo).toLowerCase());
   if (!m) notFound();
   return m;
 }
 
-async function MachineHeader({ params }: { params: Promise<{ codigo: string }> }) {
-  const m = await resolve(params);
+function MachineHeader({ machine: m }: { machine: { code: string; label: string } }) {
   return (
     <div className="flex items-center gap-3 px-1">
       <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground shadow-lg shadow-primary/25">
@@ -46,15 +45,4 @@ async function MachineHeader({ params }: { params: Promise<{ codigo: string }> }
       </div>
     </div>
   );
-}
-
-async function MachineForm({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ codigo: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const m = await resolve(params);
-  return <StartFormLoader searchParams={searchParams} machineCode={m.code} />;
 }

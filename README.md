@@ -97,3 +97,20 @@ pnpm cf:deploy
 No Windows, o build do OpenNext usa `nodeLinker: hoisted` (em `pnpm-workspace.yaml`) para não depender de symlinks. Para testar localmente no runtime do Workers, rode `pnpm cf:preview` (lê os segredos de `.dev.vars`).
 
 **Depois do primeiro deploy**: em Supabase → Authentication → URL Configuration, coloque a URL `*.workers.dev` (ou o domínio próprio) em *Site URL* e adicione `https://SEU-DOMINIO/auth/callback` em *Redirect URLs*.
+
+## Várias lavanderias (multi-tenant)
+
+- **`/`**: o cliente escolhe a lavanderia no **mapa** (MapLibre + OpenFreeMap, grátis e sem chave), pela **busca** (nome ou cidade) ou com **"Perto de mim"**, que ordena por distância (a localização fica só no celular). A última lavanderia visitada aparece como "Continuar".
+- **`/{loja}`**: tudo da lavanderia (início, ajuda, dúvidas, máquinas livres). O **QR Code** de cada máquina é `/{loja}/m/{código}` e abre direto o atendimento dela. Endereços antigos (`/m/L1`, `/ajuda`…) redirecionam para a loja padrão (`NEXT_PUBLIC_STORE_SLUG`).
+- **Conta do cliente** (`/conta`): vale para todas as lavanderias (pontos e histórico com o nome da loja).
+- **Painel do dono** (`/painel`): mostra só a lavanderia do dono (RLS + filtro por loja).
+- **Admin da plataforma** (`/admin`):
+  - Cadastra a lavanderia (nome, endereço no app, ponto no mapa, horário).
+  - Gera as máquinas `L1…`/`S1…` e as respostas padrão.
+  - Dá acesso ao dono: senha provisória, ou link por e-mail no primeiro acesso.
+  - Abre o painel de qualquer loja.
+
+```bash
+pnpm create-admin voce@email.com SenhaForte123   # cria/promove um admin da plataforma
+pnpm create-owner dono@loja.com SenhaForte123     # dono da loja padrão (ou use o /admin)
+```

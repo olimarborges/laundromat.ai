@@ -8,9 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PROBLEM_LIST } from "@/domain/problems";
 import { getStoreStatus } from "@/domain/store-hours";
 import { formatHourShort, parseHHMM } from "@/domain/time";
-import { getStore, storeHours } from "@/server/store";
+import { requireStore, storeHours } from "@/server/store";
+import type { StoreRow } from "@/server/types";
 
-export default function HomePage() {
+export default async function StoreHomePage({ params }: PageProps<"/[loja]">) {
+  const { loja } = await params;
+  const store = await requireStore(loja);
+  const base = `/${store.slug}`;
   const chips = PROBLEM_LIST.filter((p) => p.id !== "outro").slice(0, 6);
   return (
     <div className="flex flex-col gap-4">
@@ -19,21 +23,21 @@ export default function HomePage() {
           <Sparkles className="size-4" aria-hidden /> Assistente virtual · 24h no seu celular
         </div>
         <h1 className="mt-3 text-[1.9rem] leading-[1.1] font-semibold tracking-tight text-balance">
-          Oi! Algum problema na lavanderia?
+          Oi! Algum problema na {store.name}?
         </h1>
         <p className="mt-2 text-[0.95rem] text-muted-foreground">
           Eu confiro o pagamento e a máquina e resolvo na hora. Sem baixar aplicativo, sem cadastro.
         </p>
         <div className="mt-5 grid gap-2.5">
           <Link
-            href="/ajuda"
+            href={`${base}/ajuda`}
             className="group flex h-14 items-center justify-between rounded-2xl bg-primary px-5 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition active:scale-[0.98]"
           >
             Preciso de ajuda
             <ArrowRight className="size-5 transition-transform group-hover:translate-x-0.5" aria-hidden />
           </Link>
           <Link
-            href="/ajuda?voz=1"
+            href={`${base}/ajuda?voz=1`}
             className="glass-subtle flex h-12 items-center justify-center gap-2 rounded-2xl text-sm font-medium transition active:scale-[0.98]"
           >
             <Mic className="size-4" aria-hidden /> Prefiro falar por voz
@@ -42,7 +46,7 @@ export default function HomePage() {
       </GlassCard>
 
       <Suspense fallback={<Skeleton className="h-[74px] rounded-3xl" />}>
-        <HoursCard />
+        <HoursCard store={store} />
       </Suspense>
 
       <section aria-labelledby="comuns" className="space-y-2.5">
@@ -51,7 +55,7 @@ export default function HomePage() {
         </h2>
         <div className="grid grid-cols-2 gap-2.5">
           {chips.map((p) => (
-            <Link key={p.id} href={`/ajuda?problema=${p.id}`} className="block">
+            <Link key={p.id} href={`${base}/ajuda?problema=${p.id}`} className="block">
               <GlassCard interactive padding="sm" className="flex h-full min-h-[84px] flex-col justify-between gap-2">
                 <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <ProblemIcon name={p.icon} className="size-[18px]" />
@@ -64,13 +68,13 @@ export default function HomePage() {
       </section>
 
       <div className="grid grid-cols-2 gap-2.5">
-        <Link href="/duvidas">
+        <Link href={`${base}/duvidas`}>
           <GlassCard interactive padding="sm" className="flex items-center gap-3">
             <BookOpen className="size-5 text-aqua" aria-hidden />
             <span className="text-sm font-medium">Como usar</span>
           </GlassCard>
         </Link>
-        <Link href="/maquinas">
+        <Link href={`${base}/maquinas`}>
           <GlassCard interactive padding="sm" className="flex items-center gap-3">
             <LayoutGrid className="size-5 text-aqua" aria-hidden />
             <span className="text-sm font-medium">Máquinas livres</span>
@@ -87,9 +91,8 @@ export default function HomePage() {
   );
 }
 
-async function HoursCard() {
+async function HoursCard({ store }: { store: StoreRow }) {
   await connection();
-  const store = await getStore();
   const hours = storeHours(store);
   const status = getStoreStatus(new Date(), hours);
   return (

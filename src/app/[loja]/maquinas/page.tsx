@@ -6,12 +6,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LiveMachines } from "@/components/cliente/live-machines";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/server/auth";
-import { getStore } from "@/server/store";
-import type { MachineRow } from "@/server/types";
+import { requireStore } from "@/server/store";
+import type { MachineRow, StoreRow } from "@/server/types";
 
 export const metadata = { title: "Máquinas livres" };
 
-export default function MaquinasPage() {
+export default async function MaquinasPage({ params }: PageProps<"/[loja]/maquinas">) {
+  const store = await requireStore((await params).loja);
   return (
     <div className="space-y-4">
       <div className="px-1">
@@ -21,7 +22,7 @@ export default function MaquinasPage() {
         <p className="text-sm text-muted-foreground">Veja antes de sair de casa. Atualiza sozinho.</p>
       </div>
       <Suspense fallback={<Skeleton className="h-64 rounded-3xl" />}>
-        <Machines />
+        <Machines store={store} />
       </Suspense>
       <p className="flex items-start gap-2 px-1 text-xs text-muted-foreground">
         <EyeOff className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -31,7 +32,7 @@ export default function MaquinasPage() {
   );
 }
 
-async function Machines() {
+async function Machines({ store }: { store: StoreRow }) {
   const user = await getSessionUser();
   if (!user) {
     return (
@@ -43,7 +44,7 @@ async function Machines() {
           Google ou e-mail e ganhe pontos a cada uso.
         </p>
         <Link
-          href="/entrar?next=/maquinas"
+          href={`/entrar?next=/${store.slug}/maquinas`}
           className="inline-flex h-12 items-center justify-center rounded-2xl bg-primary px-6 font-semibold text-primary-foreground"
         >
           Entrar ou criar conta
@@ -51,7 +52,6 @@ async function Machines() {
       </GlassCard>
     );
   }
-  const store = await getStore();
   const supabase = await createClient();
   const [{ data }] = await Promise.all([
     supabase.from("machines").select("*").eq("store_id", store.id).order("sort"),

@@ -5,17 +5,22 @@ import { motion } from "motion/react";
 import { House, LifeBuoy, BookOpen, CircleUserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ITEMS = [
-  { href: "/", label: "Início", icon: House },
-  { href: "/ajuda", label: "Ajuda", icon: LifeBuoy },
-  { href: "/duvidas", label: "Dúvidas", icon: BookOpen },
-  { href: "/conta", label: "Conta", icon: CircleUserRound },
-];
-
-export function BottomNav() {
+/** Barra inferior. Com `slug`: navegação da lavanderia; sem: da plataforma. */
+export function BottomNav({ slug }: { slug?: string }) {
   const pathname = usePathname();
-  if (pathname.startsWith("/atendimento")) return null;
-  const active = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  const home = slug ? `/${slug}` : "/";
+  const ITEMS = slug
+    ? [
+        { href: home, label: "Início", icon: House },
+        { href: `${home}/ajuda`, label: "Ajuda", icon: LifeBuoy },
+        { href: `${home}/duvidas`, label: "Dúvidas", icon: BookOpen },
+        { href: "/conta", label: "Conta", icon: CircleUserRound },
+      ]
+    : [
+        { href: "/", label: "Lavanderias", icon: House },
+        { href: "/conta", label: "Conta", icon: CircleUserRound },
+      ];
+  const active = (href: string) => (href === home ? pathname === home : pathname.startsWith(href));
 
   return (
     <nav aria-label="Navegação principal" className="pb-safe fixed inset-x-0 bottom-0 z-40 px-4">

@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "EasyWash · Atendimento",
-    short_name: "EasyWash",
-    description: "Assistente virtual da lavanderia EasyWash.",
+    name: "laundromat.ai · Atendimento de lavanderias",
+    short_name: "Lavanderia",
+    description: "Assistente virtual das lavanderias self-service: resolva problemas pelo celular.",
     lang: "pt-BR",
     start_url: "/?origem=app",
     scope: "/",
@@ -20,8 +20,8 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
-      { name: "Preciso de ajuda", url: "/ajuda", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: "Máquinas livres", url: "/maquinas", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Lavanderias", url: "/", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Minha conta", url: "/conta", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
     ],
   };
 }

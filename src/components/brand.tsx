@@ -20,12 +20,12 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-export function Brand({ href = "/", subtitle }: { href?: string; subtitle?: string }) {
+export function Brand({ href = "/", subtitle, name = "laundromat.ai" }: { href?: string; subtitle?: string; name?: string }) {
   return (
     <Link href={href} className="flex items-center gap-2.5 rounded-xl">
       <BrandMark />
       <span className="flex flex-col leading-tight">
-        <span className="text-base font-semibold tracking-tight">EasyWash</span>
+        <span className="text-base font-semibold tracking-tight">{name}</span>
         {subtitle ? <span className="text-xs text-muted-foreground">{subtitle}</span> : null}
       </span>
     </Link>

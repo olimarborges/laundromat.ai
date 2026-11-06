@@ -11,7 +11,7 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
-import { getStore } from "@/server/store";
+import { getStoreById } from "@/server/store";
 import { getSessionUser } from "@/server/auth";
 import { getConversationForViewer, getMachineById, loadMessages, saveMessages } from "@/server/support";
 import { makeTools, type AssistantContext } from "@/server/assistant/tools";
@@ -36,12 +36,11 @@ export async function POST(req: Request) {
   if (!conversation) return new Response("Atendimento não encontrado", { status: 404 });
 
   const [store, machine, previous, user] = await Promise.all([
-    getStore(),
+    getStoreById(conversation.store_id),
     getMachineById(conversation.machine_id),
     loadMessages(conversation.id),
     getSessionUser(),
   ]);
-  if (store.id !== conversation.store_id) return new Response("Loja inválida", { status: 403 });
 
   if (previous.filter((m) => m.role === "user").length >= MAX_USER_MESSAGES) {
     return new Response("Limite de mensagens deste atendimento atingido. Abra um novo atendimento.", { status: 429 });

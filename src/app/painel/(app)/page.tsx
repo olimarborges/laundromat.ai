@@ -8,7 +8,7 @@ import { GridSkeleton, PageTitle, StatCard } from "@/components/painel/ui";
 import { LiveStoreStatus } from "@/components/painel/live-store-status";
 import { MarkReadButton } from "@/components/painel/mark-read-button";
 import { requireOwner } from "@/server/auth";
-import { getStore } from "@/server/store";
+import { getStoreById } from "@/server/store";
 import { getMachinesFull, getOverview } from "@/server/panel";
 import { describeSlot, nextNotificationAt } from "@/domain/notifications";
 
@@ -18,6 +18,9 @@ export default function PanelHome() {
   return (
     <div className="space-y-6">
       <PageTitle title="Visão geral" description="O que precisa de você agora e como está a loja." />
+      <Suspense fallback={null}>
+        <StoreLabel />
+      </Suspense>
       <Suspense fallback={<GridSkeleton />}>
         <Kpis />
       </Suspense>
@@ -36,6 +39,28 @@ export default function PanelHome() {
           </Suspense>
         </section>
       </div>
+    </div>
+  );
+}
+
+async function StoreLabel() {
+  const user = await requireOwner();
+  const store = await getStoreById(user.profile.store_id!);
+  return (
+    <div className="glass -mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl px-4 py-2.5 text-sm lg:hidden">
+      <span>
+        Lavanderia: <span className="font-semibold">{store.name}</span>
+      </span>
+      <span className="flex items-center gap-3">
+        <Link href={`/${store.slug}`} target="_blank" className="text-primary hover:underline">
+          Ver como cliente
+        </Link>
+        {user.profile.role === "admin" ? (
+          <Link href="/admin" className="text-muted-foreground hover:underline">
+            Admin
+          </Link>
+        ) : null}
+      </span>
     </div>
   );
 }
@@ -83,14 +108,14 @@ async function Kpis() {
 
 async function StoreNow() {
   const user = await requireOwner();
-  const [{ machines, terminal }, store] = await Promise.all([getMachinesFull(user.profile.store_id!), getStore()]);
+  const [{ machines, terminal }, store] = await Promise.all([getMachinesFull(user.profile.store_id!), getStoreById(user.profile.store_id!)]);
   return <LiveStoreStatus machines={machines} terminal={terminal} internet={store.internet_status} />;
 }
 
 async function Notifications() {
   await connection();
   const user = await requireOwner();
-  const [o, store] = await Promise.all([getOverview(user.profile.store_id!), getStore()]);
+  const [o, store] = await Promise.all([getOverview(user.profile.store_id!), getStoreById(user.profile.store_id!)]);
   const now = new Date();
   const delivered = o.notifications.filter((n) => Date.parse(n.deliver_at) <= now.getTime());
   const queued = o.notifications.filter((n) => Date.parse(n.deliver_at) > now.getTime());

@@ -22,7 +22,21 @@ export interface StoreRow {
   };
   internet_status: "online" | "offline";
   internet_changed_at: string;
+  city: string | null;
+  state: string | null;
+  lat: number | null;
+  lng: number | null;
+  description: string | null;
+  brand_color: string | null;
+  active: boolean;
+  created_at?: string;
 }
+
+/** Campos públicos da loja (tela de escolha / mapa). */
+export type PublicStore = Pick<
+  StoreRow,
+  "id" | "slug" | "name" | "address" | "city" | "state" | "lat" | "lng" | "description" | "open_time" | "close_time" | "timezone"
+>;
 
 import type { MachineKind, MachineStatus } from "@/domain/machines";
 export type { MachineKind, MachineStatus };
@@ -186,7 +200,7 @@ export interface OwnerNotificationRow {
 export interface ProfileRow {
   id: string;
   store_id: string | null;
-  role: "owner" | "customer";
+  role: "admin" | "owner" | "customer";
   full_name: string | null;
   phone: string | null;
   points: number;

@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageTitle } from "@/components/painel/ui";
 import { SettingsForm } from "@/components/painel/settings-form";
 import { requireOwner } from "@/server/auth";
-import { getStore } from "@/server/store";
+import { getStoreById } from "@/server/store";
 
 export const metadata = { title: "Configurações" };
 
@@ -19,7 +19,7 @@ export default function ConfiguracoesPage() {
 }
 
 async function Content() {
-  await requireOwner();
-  const store = await getStore();
+  const user = await requireOwner();
+  const store = await getStoreById(user.profile.store_id!);
   return <SettingsForm store={store} />;
 }

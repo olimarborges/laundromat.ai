@@ -8,7 +8,7 @@ import { MachineTile, useNow } from "@/components/machine-tile";
 import { Button } from "@/components/ui/button";
 import type { MachineRow } from "@/server/types";
 
-export function MachinesAdmin({ machines, appUrl }: { machines: MachineRow[]; appUrl: string }) {
+export function MachinesAdmin({ machines, storeUrl }: { machines: MachineRow[]; storeUrl: string }) {
   const now = useNow();
   const [pending, start] = useTransition();
   const run = (fn: () => Promise<{ ok: boolean; message: string }>) =>
@@ -46,7 +46,7 @@ export function MachinesAdmin({ machines, appUrl }: { machines: MachineRow[]; ap
           </Button>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 print:grid-cols-2">
-          {[...machines.map((m) => ({ code: m.code, label: m.label, url: `${appUrl}/m/${m.code}` })), { code: "LOJA", label: "Atendimento geral", url: `${appUrl}/` }].map(
+          {[...machines.map((m) => ({ code: m.code, label: m.label, url: `${storeUrl}/m/${m.code}` })), { code: "LOJA", label: "Atendimento geral", url: storeUrl }].map(
             (q) => (
               <figure key={q.code} className="flex flex-col items-center gap-2 rounded-3xl bg-white p-4 text-center text-slate-900 shadow-sm ring-1 ring-slate-200 break-inside-avoid">
                 <QRCodeSVG value={q.url} size={148} level="M" marginSize={0} fgColor="#0f172a" />

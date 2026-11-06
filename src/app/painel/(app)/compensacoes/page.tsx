@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, PageTitle, StatusBadge } from "@/components/painel/ui";
 import { CompensationDecision } from "@/components/painel/case-actions";
 import { requireOwner } from "@/server/auth";
-import { getStore } from "@/server/store";
+import { getStoreById } from "@/server/store";
 import { listCompensations } from "@/server/panel";
 import { requestNow } from "@/server/clock";
 import { connection } from "next/server";
@@ -29,7 +29,7 @@ async function Content() {
   await connection();
   const user = await requireOwner();
   const now = requestNow();
-  const [list, store] = await Promise.all([listCompensations(user.profile.store_id!), getStore()]);
+  const [list, store] = await Promise.all([listCompensations(user.profile.store_id!), getStoreById(user.profile.store_id!)]);
   const pending = list.filter((c) => c.status === "pending");
   const history = list.filter((c) => c.status !== "pending");
   const monthTotal = history

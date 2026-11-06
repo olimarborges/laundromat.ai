@@ -3,12 +3,14 @@ import Link from "next/link";
 import { ChevronDown, MessageCircle } from "lucide-react";
 import { GlassCard } from "@/components/glass/glass-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getStore } from "@/server/store";
+import { requireStore } from "@/server/store";
+import type { StoreRow } from "@/server/types";
 import { listKbCached } from "@/server/kb";
 
 export const metadata = { title: "Dúvidas" };
 
-export default function DuvidasPage() {
+export default async function DuvidasPage({ params }: PageProps<"/[loja]/duvidas">) {
+  const store = await requireStore((await params).loja);
   return (
     <div className="space-y-4">
       <div className="px-1">
@@ -16,12 +18,12 @@ export default function DuvidasPage() {
         <p className="text-sm text-muted-foreground">Respostas escritas junto com a loja.</p>
       </div>
       <Suspense fallback={<KbSkeleton />}>
-        <KbList />
+        <KbList store={store} />
       </Suspense>
       <GlassCard padding="md" className="flex items-center gap-3">
         <MessageCircle className="size-5 shrink-0 text-primary" aria-hidden />
         <p className="flex-1 text-sm">Não achou o que precisava?</p>
-        <Link href="/ajuda" className="rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
+        <Link href={`/${store.slug}/ajuda`} className="rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
           Perguntar
         </Link>
       </GlassCard>
@@ -29,8 +31,7 @@ export default function DuvidasPage() {
   );
 }
 
-async function KbList() {
-  const store = await getStore();
+async function KbList({ store }: { store: StoreRow }) {
   const articles = await listKbCached(store.id);
   const groups = Object.entries(
     articles.reduce<Record<string, typeof articles>>((acc, a) => {

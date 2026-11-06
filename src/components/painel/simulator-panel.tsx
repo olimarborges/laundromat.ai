@@ -35,9 +35,11 @@ const ICONS: Record<ScenarioId, React.ComponentType<{ className?: string }>> = {
 };
 
 export function SimulatorPanel({
+  storeSlug,
   scenarios,
   machines,
 }: {
+  storeSlug: string;
   scenarios: { id: ScenarioId; title: string; description: string; needsMachine: boolean }[];
   machines: { code: string; label: string }[];
 }) {
@@ -77,7 +79,7 @@ export function SimulatorPanel({
           ))}
         </div>
         <Link
-          href={`/m/${machine}`}
+          href={`/${storeSlug}/m/${machine}`}
           target="_blank"
           className="ml-auto inline-flex h-11 items-center gap-2 rounded-xl bg-accent px-3 text-sm font-medium text-accent-foreground"
         >

@@ -1,16 +1,21 @@
 -- Seed do piloto EasyWash. Dados de equipamentos a confirmar com o lojista.
 -- Valores marcados "(demo)" são fictícios, só para a demonstração.
 
-insert into public.stores (id, slug, name, address, open_time, close_time, owner_whatsapp, owner_email)
+insert into public.stores (id, slug, name, address, city, state, lat, lng, description, open_time, close_time, owner_whatsapp, owner_email)
 values (
   '00000000-0000-4000-8000-000000000001',
   'easywash',
   'EasyWash',
-  'Novo Hamburgo, RS',
+  null,
+  'Novo Hamburgo',
+  'RS',
+  -29.6788,
+  -51.1306,
+  'Lavanderia self-service · 4 máquinas Speed Queen',
   '06:00',
   '23:00',
   null,
-  null -- defina com: update stores set owner_email = 'voce@exemplo.com';
+  null -- defina com: pnpm create-owner voce@email.com SuaSenha
 )
 on conflict (id) do nothing;
 

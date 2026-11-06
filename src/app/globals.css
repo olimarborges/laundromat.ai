@@ -282,3 +282,55 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Mapa das lavanderias (MapLibre) ── */
+.store-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 180ms ease-out;
+}
+.store-pin:hover,
+.store-pin:focus-visible {
+  transform: translateY(-2px) scale(1.06);
+}
+.store-pin__bubble {
+  display: grid;
+  place-items: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.5rem;
+  border-radius: 9999px;
+  font: 700 0.8rem/1 var(--font-inter), system-ui, sans-serif;
+  color: #fff;
+  background: linear-gradient(135deg, var(--aqua), var(--primary));
+  border: 2px solid rgb(255 255 255 / 0.9);
+  box-shadow: 0 6px 18px -4px rgb(37 99 235 / 0.55);
+}
+.store-pin__tip {
+  width: 10px;
+  height: 10px;
+  margin-top: -6px;
+  transform: rotate(45deg);
+  background: var(--primary);
+  border-right: 2px solid rgb(255 255 255 / 0.9);
+  border-bottom: 2px solid rgb(255 255 255 / 0.9);
+}
+.store-pin.is-selected .store-pin__bubble {
+  transform: scale(1.18);
+  box-shadow:
+    0 0 0 6px rgb(37 99 235 / 0.25),
+    0 8px 22px -4px rgb(37 99 235 / 0.7);
+}
+.user-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 8px rgb(37 99 235 / 0.22);
+}
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}

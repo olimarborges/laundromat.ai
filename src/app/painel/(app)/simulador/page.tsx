@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageTitle } from "@/components/painel/ui";
 import { SimulatorPanel } from "@/components/painel/simulator-panel";
 import { requireOwner } from "@/server/auth";
-import { getStore } from "@/server/store";
+import { getStoreById } from "@/server/store";
 import { getMachineOptions } from "@/server/machines-public";
 import { SCENARIOS, type ScenarioId } from "@/server/simulator";
 
@@ -34,9 +34,9 @@ export default function SimuladorPage() {
 }
 
 async function Content() {
-  await requireOwner();
-  const store = await getStore();
+  const user = await requireOwner();
+  const store = await getStoreById(user.profile.store_id!);
   const machines = await getMachineOptions(store.id);
   const scenarios = (Object.keys(SCENARIOS) as ScenarioId[]).map((id) => ({ id, ...SCENARIOS[id] }));
-  return <SimulatorPanel scenarios={scenarios} machines={machines} />;
+  return <SimulatorPanel storeSlug={store.slug} scenarios={scenarios} machines={machines} />;
 }

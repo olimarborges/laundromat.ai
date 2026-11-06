@@ -30,6 +30,16 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
 export async function requireOwner(): Promise<SessionUser & { profile: ProfileRow }> {
   const user = await getSessionUser();
   if (!user) redirect("/painel/entrar");
-  if (user.profile?.role !== "owner" || !user.profile.store_id) redirect("/painel/entrar?erro=sem-permissao");
+  const role = user.profile?.role;
+  if (role === "admin" && !user.profile?.store_id) redirect("/admin");
+  if ((role !== "owner" && role !== "admin") || !user.profile?.store_id) redirect("/painel/entrar?erro=sem-permissao");
+  return user as SessionUser & { profile: ProfileRow };
+}
+
+/** Exige o admin da plataforma. */
+export async function requireAdmin(): Promise<SessionUser & { profile: ProfileRow }> {
+  const user = await getSessionUser();
+  if (!user) redirect("/painel/entrar?next=/admin");
+  if (user.profile?.role !== "admin") redirect("/painel/entrar?erro=sem-permissao");
   return user as SessionUser & { profile: ProfileRow };
 }

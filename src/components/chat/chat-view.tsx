@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   conversationId: string;
+  storeSlug: string;
+  storeName: string;
   initialMessages: UIMessage[];
   visitorName: string | null;
   machineLabel: string | null;
@@ -27,6 +29,8 @@ interface Props {
 
 export function ChatView({
   conversationId,
+  storeSlug,
+  storeName,
   initialMessages,
   visitorName,
   machineLabel,
@@ -132,12 +136,12 @@ export function ChatView({
       {/* Cabeçalho */}
       <header className="pt-safe px-3">
         <div className="glass mt-2 flex items-center gap-2 rounded-2xl p-1.5 pr-2">
-          <Link href="/" aria-label="Voltar ao início" className="flex size-10 items-center justify-center rounded-xl hover:bg-muted/60">
+          <Link href={`/${storeSlug}`} aria-label="Voltar ao início" className="flex size-10 items-center justify-center rounded-xl hover:bg-muted/60">
             <ArrowLeft className="size-5" aria-hidden />
           </Link>
           <VoiceOrb state={orb} className="size-9" />
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-sm font-semibold">Assistente EasyWash</p>
+            <p className="truncate text-sm font-semibold">Assistente {storeName}</p>
             <p className="truncate text-xs text-muted-foreground">
               {busy ? "digitando…" : "assistente virtual"}
               {machineLabel ? ` · ${machineLabel}` : ""}

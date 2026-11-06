@@ -13,10 +13,10 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "sw
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: { default: "EasyWash · Atendimento", template: "%s · EasyWash" },
-  description: "Assistente virtual da lavanderia EasyWash: resolva problemas pelo celular, sem baixar aplicativo.",
-  applicationName: "EasyWash",
-  appleWebApp: { capable: true, title: "EasyWash", statusBarStyle: "default" },
+  title: { default: "Atendimento de lavanderias", template: "%s · laundromat.ai" },
+  description: "Assistente virtual das lavanderias self-service: resolva problemas pelo celular, sem baixar aplicativo.",
+  applicationName: "laundromat.ai",
+  appleWebApp: { capable: true, title: "Lavanderia", statusBarStyle: "default" },
   formatDetection: { telephone: false },
 };
 

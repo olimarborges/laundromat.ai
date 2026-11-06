@@ -41,7 +41,7 @@ async function Account() {
     supabase.from("loyalty_ledger").select("id, points, reason, created_at").order("created_at", { ascending: false }).limit(10),
     supabase
       .from("conversations")
-      .select("id, problem_type, status, created_at")
+      .select("id, problem_type, status, created_at, stores(name)")
       .eq("customer_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10),
@@ -55,7 +55,7 @@ async function Account() {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-4xl font-semibold tracking-tight tabular-nums">{points}</p>
-            <p className="text-sm text-muted-foreground">pontos EasyWash</p>
+            <p className="text-sm text-muted-foreground">pontos para usar nas lavanderias parceiras</p>
           </div>
           <Gift className="size-10 text-aqua" aria-hidden />
         </div>
@@ -80,8 +80,13 @@ async function Account() {
                 ) : (
                   <MessageSquare className="size-5 text-primary" aria-hidden />
                 )}
-                <span className="flex-1 text-sm">
-                  {isProblemType(c.problem_type) ? PROBLEMS[c.problem_type].title : "Atendimento"}
+                <span className="min-w-0 flex-1 text-sm">
+                  <span className="block truncate">
+                    {isProblemType(c.problem_type) ? PROBLEMS[c.problem_type].title : "Atendimento"}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {(c.stores as unknown as { name: string } | null)?.name}
+                  </span>
                 </span>
                 <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
               </Link>
