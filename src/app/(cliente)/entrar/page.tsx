@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { Gift, History, LayoutGrid } from "lucide-react";
+import Link from "next/link";
+import { Gift, History, LayoutGrid, Store } from "lucide-react";
 import { GlassCard } from "@/components/glass/glass-card";
 import { LoginForm } from "@/components/auth/login-form";
 
@@ -29,6 +30,12 @@ export default function EntrarPage({ searchParams }: PageProps<"/entrar">) {
           <LoginWithNext searchParams={searchParams} />
         </Suspense>
       </GlassCard>
+      <Link
+        href="/painel/entrar"
+        className="glass-subtle flex min-h-12 items-center justify-center gap-2 rounded-2xl text-sm font-medium"
+      >
+        <Store className="size-4" aria-hidden /> Sou o lojista: entrar no painel com e-mail e senha
+      </Link>
     </div>
   );
 }

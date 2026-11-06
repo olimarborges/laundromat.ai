@@ -1,7 +1,15 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-/** Voz pelo navegador (Web Speech API): reconhecimento e fala em pt-BR, sem custo. */
+/**
+ * Voz pelo navegador com a Web Speech API (gratuita). No Chrome o reconhecimento é feito
+ * pelos servidores do Google; no Edge, pelos da Microsoft. Nada passa pelo nosso servidor.
+ *
+ * - useDictation: ditado contínuo; o texto vai sendo escrito (parcial + final) e quem usa decide quando enviar.
+ * - useSpeaker: lê as respostas em voz alta, preferindo a voz "Google português do Brasil".
+ */
+
+type ResultList = ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
 
 type Recognition = {
   lang: string;
@@ -11,9 +19,10 @@ type Recognition = {
   start(): void;
   stop(): void;
   abort(): void;
-  onresult: ((e: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+  onstart: (() => void) | null;
+  onresult: ((e: { resultIndex: number; results: ResultList }) => void) | null;
   onend: (() => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
+  onerror: ((e: { error: string; message?: string }) => void) | null;
 };
 
 type RecognitionCtor = new () => Recognition;
@@ -26,78 +35,132 @@ function getCtor(): RecognitionCtor | null {
 
 const subscribeNoop = () => () => {};
 
-export type VoiceState = "idle" | "listening" | "speaking";
+/** Mensagem clara para cada falha do reconhecimento. */
+export function dictationErrorMessage(code: string): string | null {
+  switch (code) {
+    case "not-allowed":
+    case "service-not-allowed":
+      return "O microfone está bloqueado. Clique no ícone de microfone (ou cadeado) na barra de endereço, permita o acesso e tente de novo.";
+    case "audio-capture":
+      return "Não encontrei um microfone. Conecte um microfone (ou fone com microfone) e tente de novo.";
+    case "network":
+      return "Este navegador não conseguiu usar o serviço de voz do Google. Abra no Google Chrome ou no Microsoft Edge e verifique sua internet.";
+    case "no-speech":
+      return "Não ouvi nada. Toque no microfone e fale perto dele.";
+    case "language-not-supported":
+      return "Este navegador não reconhece português. Use o Google Chrome ou o Microsoft Edge.";
+    case "unsupported":
+      return "Este navegador não tem reconhecimento de voz. Use o Google Chrome ou o Microsoft Edge (no celular, abra o link no Chrome).";
+    case "aborted":
+      return null;
+    default:
+      return "Não consegui ouvir agora. Tente de novo ou digite a mensagem.";
+  }
+}
+
+export type DictationState = "idle" | "starting" | "listening";
+
+/**
+ * Ditado contínuo em pt-BR. `onTranscript` recebe o texto da sessão inteira
+ * (finais + parcial atual) a cada novo resultado.
+ */
+export function useDictation(onTranscript: (text: string) => void) {
+  const supported = useSyncExternalStore(subscribeNoop, () => getCtor() !== null, () => false);
+  const [state, setState] = useState<DictationState>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const recRef = useRef<Recognition | null>(null);
+  const cbRef = useRef(onTranscript);
+
+  useEffect(() => {
+    cbRef.current = onTranscript;
+  }, [onTranscript]);
+
+  const start = useCallback(() => {
+    const Ctor = getCtor();
+    setError(null);
+    if (!Ctor) {
+      setError(dictationErrorMessage("unsupported"));
+      return;
+    }
+    recRef.current?.abort();
+    const rec = new Ctor();
+    rec.lang = "pt-BR";
+    rec.interimResults = true;
+    rec.continuous = true;
+    rec.maxAlternatives = 1;
+    rec.onstart = () => setState("listening");
+    rec.onresult = (e) => {
+      let text = "";
+      for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+      cbRef.current(text.replace(/\s+/g, " ").trimStart());
+    };
+    rec.onerror = (e) => {
+      const msg = dictationErrorMessage(e.error);
+      if (msg) setError(msg);
+      if (process.env.NODE_ENV !== "production") console.warn("[voz]", e.error, e.message);
+    };
+    rec.onend = () => {
+      recRef.current = null;
+      setState("idle");
+    };
+    recRef.current = rec;
+    setState("starting");
+    try {
+      rec.start();
+    } catch {
+      setState("idle");
+      setError(dictationErrorMessage("default"));
+    }
+  }, []);
+
+  const stop = useCallback(() => {
+    recRef.current?.stop();
+  }, []);
+
+  useEffect(() => () => recRef.current?.abort(), []);
+
+  return { supported, state, listening: state !== "idle", error, clearError: () => setError(null), start, stop };
+}
 
 export function cleanForSpeech(text: string) {
   return text
     .replace(/\*\*(.+?)\*\*/g, "$1")
     .replace(/[✔✖–•#>*_`]/g, " ")
     .replace(/\b([LS])(\d)\b/g, "$1 $2")
+    .replace(/R\$\s?(\d+),(\d{2})/g, "$1 reais e $2 centavos")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-export function useVoice(onFinalTranscript: (text: string) => void) {
-  const supported = useSyncExternalStore(subscribeNoop, () => getCtor() !== null, () => false);
-  const ttsSupported = useSyncExternalStore(subscribeNoop, () => "speechSynthesis" in window, () => false);
-  const [state, setState] = useState<VoiceState>("idle");
-  const [interim, setInterim] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const recRef = useRef<Recognition | null>(null);
-  const finalRef = useRef("");
-  const cbRef = useRef(onFinalTranscript);
+/** Escolhe a melhor voz pt-BR disponível (Google primeiro). */
+function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+  const br = voices.filter((v) => v.lang.toLowerCase().replace("_", "-").startsWith("pt-br"));
+  return (
+    br.find((v) => /google/i.test(v.name)) ??
+    br.find((v) => /natural|online/i.test(v.name)) ??
+    br[0] ??
+    voices.find((v) => v.lang.toLowerCase().startsWith("pt"))
+  );
+}
+
+export function useSpeaker() {
+  const supported = useSyncExternalStore(subscribeNoop, () => "speechSynthesis" in window, () => false);
+  const [speaking, setSpeaking] = useState(false);
+  const voiceRef = useRef<SpeechSynthesisVoice | undefined>(undefined);
 
   useEffect(() => {
-    cbRef.current = onFinalTranscript;
-  }, [onFinalTranscript]);
-
-  const stopSpeaking = useCallback(() => {
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    setState((s) => (s === "speaking" ? "idle" : s));
+    if (!("speechSynthesis" in window)) return;
+    const synth = window.speechSynthesis;
+    const load = () => {
+      voiceRef.current = pickVoice(synth.getVoices());
+    };
+    load();
+    synth.addEventListener("voiceschanged", load);
+    return () => {
+      synth.removeEventListener("voiceschanged", load);
+      synth.cancel();
+    };
   }, []);
-
-  const listen = useCallback(() => {
-    const Ctor = getCtor();
-    if (!Ctor) return;
-    stopSpeaking();
-    setError(null);
-    finalRef.current = "";
-    setInterim("");
-    const rec = new Ctor();
-    rec.lang = "pt-BR";
-    rec.interimResults = true;
-    rec.continuous = false;
-    rec.maxAlternatives = 1;
-    rec.onresult = (e) => {
-      let text = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const r = e.results[i];
-        if (r.isFinal) finalRef.current += r[0].transcript;
-        else text += r[0].transcript;
-      }
-      setInterim(finalRef.current + text);
-    };
-    rec.onerror = (e) => {
-      setError(
-        e.error === "not-allowed"
-          ? "Permita o uso do microfone para falar comigo."
-          : e.error === "no-speech"
-            ? "Não ouvi nada. Toque e fale de novo."
-            : "Não consegui ouvir. Tente de novo ou digite.",
-      );
-    };
-    rec.onend = () => {
-      setState("idle");
-      const text = finalRef.current.trim();
-      setInterim("");
-      if (text) cbRef.current(text);
-    };
-    recRef.current = rec;
-    setState("listening");
-    rec.start();
-  }, [stopSpeaking]);
-
-  const stopListening = useCallback(() => recRef.current?.stop(), []);
 
   const speak = useCallback((text: string) => {
     if (!("speechSynthesis" in window)) return;
@@ -106,21 +169,17 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
     const u = new SpeechSynthesisUtterance(cleanForSpeech(text));
     u.lang = "pt-BR";
     u.rate = 1.05;
-    const voice = synth.getVoices().find((v) => v.lang.toLowerCase().startsWith("pt-br"));
-    if (voice) u.voice = voice;
-    u.onstart = () => setState("speaking");
-    u.onend = () => setState("idle");
-    u.onerror = () => setState("idle");
+    if (voiceRef.current) u.voice = voiceRef.current;
+    u.onstart = () => setSpeaking(true);
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
     synth.speak(u);
   }, []);
 
-  useEffect(
-    () => () => {
-      recRef.current?.abort();
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    },
-    [],
-  );
+  const stop = useCallback(() => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    setSpeaking(false);
+  }, []);
 
-  return { supported, ttsSupported, state, interim, error, listen, stopListening, speak, stopSpeaking };
+  return { supported, speaking, speak, stop };
 }

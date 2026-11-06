@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getToolName, isToolUIPart, type UIMessage } from "ai";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, ArrowUp, CheckCheck, Mic, MicOff, Square, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ArrowUp, CheckCheck, Mic, Square, Volume2, VolumeX } from "lucide-react";
 import { RichText } from "@/components/chat/rich-text";
 import { ToolPart } from "@/components/chat/tool-part";
 import { OutcomePanel } from "@/components/chat/outcome-panel";
 import { VoiceOrb, type OrbState } from "@/components/glass/voice-orb";
 import { ProblemIcon } from "@/components/icon";
-import { useVoice } from "@/hooks/use-voice";
+import { useDictation, useSpeaker } from "@/hooks/use-voice";
 import { PROBLEM_LIST } from "@/domain/problems";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +52,11 @@ export function ChatView({
     [conversationId],
   );
 
-  const voiceRef = useRef<{ speak: (t: string) => void } | null>(null);
+  const speaker = useSpeaker();
+  const speakRef = useRef(speaker.speak);
+  useEffect(() => {
+    speakRef.current = speaker.speak;
+  }, [speaker.speak]);
   const voiceRepliesRef = useRef(voiceReplies);
   useEffect(() => {
     voiceRepliesRef.current = voiceReplies;
@@ -66,7 +70,7 @@ export function ChatView({
       setRefreshKey((k) => k + 1);
       if (voiceRepliesRef.current) {
         const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ");
-        if (text.trim()) voiceRef.current?.speak(text);
+        if (text.trim()) speakRef.current(text);
       }
     },
   });
@@ -82,13 +86,22 @@ export function ChatView({
     [busy, sendMessage],
   );
 
-  const voice = useVoice((text) => {
-    setVoiceReplies(true);
-    send(text);
-  });
-  useEffect(() => {
-    voiceRef.current = voice;
-  }, [voice]);
+  // Ditado: o que a pessoa fala vai sendo escrito na caixa; ela revisa e toca em enviar.
+  const dictationBase = useRef("");
+  const dictation = useDictation((spoken) => setInput(dictationBase.current + spoken));
+  const toggleDictation = () => {
+    if (dictation.listening) {
+      dictation.stop();
+      return;
+    }
+    speaker.stop();
+    dictationBase.current = input.trim() ? `${input.trim()} ` : "";
+    dictation.start();
+  };
+  const submit = () => {
+    if (dictation.listening) dictation.stop();
+    send(input);
+  };
 
   // Primeira mensagem vinda do formulário (chip escolhido) + limpa a URL.
   useEffect(() => {
@@ -109,7 +122,7 @@ export function ChatView({
   }, [messages, status]);
 
   const orb: OrbState =
-    voice.state === "listening" ? "listening" : voice.state === "speaking" ? "speaking" : busy ? "thinking" : "idle";
+    dictation.listening ? "listening" : speaker.speaking ? "speaking" : busy ? "thinking" : "idle";
 
   const showChips = !busy && messages.filter((m) => m.role === "user").length <= 1;
   const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
@@ -131,11 +144,11 @@ export function ChatView({
               {mode === "script" ? " · modo roteiro" : ""}
             </p>
           </div>
-          {voice.ttsSupported ? (
+          {speaker.supported ? (
             <button
               type="button"
               onClick={() => {
-                if (voiceReplies) voice.stopSpeaking();
+                if (voiceReplies) speaker.stop();
                 setVoiceReplies((v) => !v);
               }}
               aria-pressed={voiceReplies}
@@ -204,43 +217,49 @@ export function ChatView({
           ) : null}
         </AnimatePresence>
 
-        {voice.state === "listening" ? (
-          <div className="glass-strong mb-2 flex items-center gap-3 rounded-2xl p-3">
-            <VoiceOrb state="listening" className="size-10" />
-            <p className="flex-1 text-sm text-muted-foreground">{voice.interim || "Pode falar, estou ouvindo…"}</p>
-            <button
-              type="button"
-              onClick={voice.stopListening}
-              className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground"
-              aria-label="Parar de ouvir"
-            >
-              <MicOff className="size-5" />
-            </button>
+        {dictation.listening ? (
+          <div className="mb-2 flex items-center gap-2.5 px-1" role="status" aria-live="polite">
+            <VoiceOrb state="listening" className="size-7" />
+            <p className="flex-1 text-xs text-muted-foreground">
+              {dictation.state === "starting"
+                ? "Ligando o microfone…"
+                : "Ouvindo… o texto aparece na caixa. Toque no microfone para parar e revise antes de enviar."}
+            </p>
           </div>
         ) : null}
-        {voice.error ? <p className="mb-1 px-1 text-xs text-destructive">{voice.error}</p> : null}
+        {dictation.error ? (
+          <p role="alert" className="mb-2 rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {dictation.error}
+          </p>
+        ) : null}
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            send(input);
+            submit();
           }}
-          className="glass-strong mb-2 flex items-end gap-1.5 rounded-[1.6rem] p-1.5"
+          className={cn(
+            "glass-strong mb-2 flex items-end gap-1.5 rounded-[1.6rem] p-1.5 transition-shadow",
+            dictation.listening && "ring-2 ring-primary/60",
+          )}
         >
-          {voice.supported ? (
-            <button
-              type="button"
-              onClick={voice.state === "listening" ? voice.stopListening : voice.listen}
-              disabled={busy}
-              className={cn(
-                "flex size-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 disabled:opacity-50",
-                voice.state === "listening" ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground",
-              )}
-              aria-label={voice.state === "listening" ? "Parar de ouvir" : "Falar por voz"}
-            >
-              <Mic className="size-5" />
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={toggleDictation}
+            disabled={busy}
+            aria-pressed={dictation.listening}
+            className={cn(
+              "relative flex size-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 disabled:opacity-50",
+              dictation.listening ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground",
+            )}
+            aria-label={dictation.listening ? "Parar o ditado" : "Falar (ditado por voz)"}
+            title={dictation.supported ? undefined : "Use o Google Chrome ou o Microsoft Edge para falar"}
+          >
+            {dictation.listening ? (
+              <span className="absolute inset-0 animate-ping rounded-full bg-primary/40" aria-hidden />
+            ) : null}
+            <Mic className="relative size-5" />
+          </button>
           <label htmlFor="chat-input" className="sr-only">
             Mensagem
           </label>
@@ -248,15 +267,18 @@ export function ChatView({
             id="chat-input"
             rows={1}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (dictation.error) dictation.clearError();
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                send(input);
+                submit();
               }
             }}
             placeholder={`Escreva aqui${visitorName ? `, ${visitorName.split(" ")[0]}` : ""}…`}
-            className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-base outline-none placeholder:text-muted-foreground"
+            className="field-sizing-content max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-base outline-none placeholder:text-muted-foreground"
           />
           {busy ? (
             <button
