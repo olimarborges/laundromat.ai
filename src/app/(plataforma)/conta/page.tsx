@@ -7,7 +7,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ProfileForm } from "@/components/cliente/profile-form";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/server/auth";
-import { PROBLEMS, isProblemType } from "@/domain/problems";
+import { problemTitles } from "@/server/problems";
 
 export const metadata = { title: "Minha conta" };
 
@@ -47,6 +47,7 @@ async function Account() {
       .order("created_at", { ascending: false })
       .limit(10),
   ]);
+  const titles = await problemTitles((convs ?? []).map((c) => c.problem_type as string | null));
   const points = user.profile?.points ?? 0;
   const role = user.profile?.role;
 
@@ -118,7 +119,7 @@ async function Account() {
                 )}
                 <span className="min-w-0 flex-1 text-sm">
                   <span className="block truncate">
-                    {isProblemType(c.problem_type) ? PROBLEMS[c.problem_type].title : "Atendimento"}
+                    {(c.problem_type && titles[c.problem_type]) || "Atendimento"}
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">
                     {(c.stores as unknown as { name: string } | null)?.name}

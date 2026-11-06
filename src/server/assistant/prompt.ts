@@ -1,6 +1,5 @@
 import "server-only";
 import { getStoreStatus } from "@/domain/store-hours";
-import { PROBLEM_LIST } from "@/domain/problems";
 import { storeHours } from "@/server/store";
 import type { AssistantContext } from "./tools";
 
@@ -24,7 +23,7 @@ Você conversa pelo celular do cliente, em português do Brasil, por texto ou vo
 
 ## Como agir
 1. Na primeira resposta, dê boas-vindas à loja pelo nome e se apresente como assistente virtual (tom positivo e acolhedor, nunca começando pelo "problema"). Seja caloroso, objetivo e use frases curtas (o cliente pode estar ouvindo por voz). No máximo 3 frases ou uma lista curta de passos por mensagem.
-2. Identifique o problema. Tipos conhecidos: ${PROBLEM_LIST.map((p) => `${p.id} (${p.title})`).join("; ")}.
+2. Identifique o problema. Problemas desta lavanderia (use a chave entre colchetes nas ferramentas): ${ctx.problems.map((p) => `[${p.key}] ${p.title}`).join("; ")}. Problemas que não estão nesta lista não acontecem aqui: trate como [outro].
 3. Se o problema envolve uma máquina e você não sabe qual, pergunte o código (etiqueta ou QR Code: L1, L2, S1, S2).
 4. Confira os fatos com a ferramenta conferir_fatos ANTES de concluir qualquer coisa. Nunca invente pagamentos, registros ou imagens.
 5. Oriente com os passos devolvidos pelas ferramentas e pela base de conhecimento. Para dúvidas de uso, use buscar_base_conhecimento; se não houver resposta, diga que vai registrar para o lojista.

@@ -57,15 +57,26 @@ async function grantOwner(storeId: string, email: string, password?: string): Pr
   const db = createAdminClient();
   const { data: list } = await db.auth.admin.listUsers({ perPage: 1000 });
   const existing = list?.users.find((u) => u.email?.toLowerCase() === email);
+  const link = (profileId: string) =>
+    db.from("store_members").upsert({ store_id: storeId, profile_id: profileId }, { onConflict: "store_id,profile_id" });
   if (existing) {
-    await db.from("profiles").upsert({ id: existing.id, store_id: storeId, role: "owner" }, { onConflict: "id" });
-    return `${email} já tinha conta e agora é dono desta lavanderia.`;
+    const { data: prof } = await db.from("profiles").select("role, store_id").eq("id", existing.id).maybeSingle();
+    // Mantém admin como admin e a loja ativa de quem já é dono de outra lavanderia.
+    await db
+      .from("profiles")
+      .upsert(
+        { id: existing.id, role: prof?.role === "admin" ? "admin" : "owner", store_id: prof?.store_id ?? storeId },
+        { onConflict: "id" },
+      );
+    await link(existing.id);
+    return `${email} já tinha conta e agora também é dono desta lavanderia.`;
   }
   if (password && password.length >= 8) {
     const created = await db.auth.admin.createUser({ email, password, email_confirm: true });
     if (created.error) return `Não consegui criar o acesso: ${created.error.message}`;
     // O trigger já criou o perfil como dono (owner_email); garante mesmo assim.
     await db.from("profiles").upsert({ id: created.data.user.id, store_id: storeId, role: "owner" }, { onConflict: "id" });
+    await link(created.data.user.id);
     return `Acesso criado para ${email} com a senha provisória informada.`;
   }
   return `Quando ${email} entrar em /painel/entrar (link por e-mail), vira dono automaticamente.`;
@@ -131,6 +142,14 @@ export async function createStore(input: StoreInput): Promise<Result> {
     machines.length ? db.from("machines").insert(machines) : Promise.resolve(),
     db.from("payment_terminals").insert({ store_id: store.id, provider: "Stone", model: "A definir" }),
     db.from("kb_articles").insert(kbTemplate(store).map((a) => ({ ...a, store_id: store.id, needs_review: true }))),
+    // Começa com os problemas da plataforma marcados; o dono ajusta em Painel → Problemas.
+    db
+      .from("problems")
+      .select("id")
+      .eq("builtin", true)
+      .then(({ data }) =>
+        data?.length ? db.from("store_problems").insert(data.map((p) => ({ store_id: store.id, problem_id: p.id }))) : null,
+      ),
   ]);
 
   let ownerMsg = "";
@@ -182,4 +201,51 @@ export async function openStorePanel(storeId: string) {
   const user = await requireAdmin();
   await createAdminClient().from("profiles").update({ store_id: storeId }).eq("id", user.id);
   redirect("/painel");
+}
+
+// ───────────────────────────── Donos vinculados e sugestões ─────────────────────────────
+
+/** Adiciona mais um dono a uma lavanderia (ex.: sócios), por e-mail. */
+export async function addStoreOwner(storeId: string, email: string, password?: string): Promise<Result> {
+  await requireAdmin();
+  const e = email.trim().toLowerCase();
+  if (!z.email().safeParse(e).success) return { ok: false, message: "E-mail inválido." };
+  const msg = await grantOwner(storeId, e, password);
+  revalidatePath(`/admin/lojas/${storeId}`);
+  return { ok: !msg.startsWith("Não consegui"), message: msg };
+}
+
+export async function removeStoreOwner(storeId: string, profileId: string): Promise<Result> {
+  await requireAdmin();
+  await createAdminClient().from("store_members").delete().eq("store_id", storeId).eq("profile_id", profileId);
+  revalidatePath(`/admin/lojas/${storeId}`);
+  return { ok: true, message: "Dono desvinculado desta lavanderia." };
+}
+
+const reviewSchema = z.object({
+  title: z.string().trim().min(4).max(80),
+  chip: z.string().trim().min(4).max(60),
+  solution: z.string().trim().min(10).max(2000),
+});
+
+/** Aprova uma sugestão (com ajustes de texto) → aparece para todas as lavanderias. */
+export async function approveSuggestion(problemId: string, input: z.input<typeof reviewSchema>): Promise<Result> {
+  await requireAdmin();
+  const parsed = reviewSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "Confira título, frase do cliente e solução." };
+  const { error } = await createAdminClient()
+    .from("problems")
+    .update({ ...parsed.data, visibility: "public", approved_at: new Date().toISOString() })
+    .eq("id", problemId)
+    .eq("visibility", "pending");
+  if (error) return { ok: false, message: error.message };
+  revalidatePath("/admin/sugestoes");
+  return { ok: true, message: "Sugestão aprovada: agora aparece para todas as lavanderias." };
+}
+
+export async function rejectSuggestion(problemId: string): Promise<Result> {
+  await requireAdmin();
+  await createAdminClient().from("problems").update({ visibility: "private" }).eq("id", problemId).eq("visibility", "pending");
+  revalidatePath("/admin/sugestoes");
+  return { ok: true, message: "Sugestão recusada: continua só na lavanderia de quem criou." };
 }

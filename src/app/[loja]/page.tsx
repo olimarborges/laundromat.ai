@@ -5,7 +5,7 @@ import { ArrowRight, BookOpen, Clock, LayoutGrid, Mic, ShieldCheck, Sparkles } f
 import { GlassCard } from "@/components/glass/glass-card";
 import { ProblemIcon } from "@/components/icon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PROBLEM_LIST } from "@/domain/problems";
+import { getStoreProblems } from "@/server/problems";
 import { getStoreStatus } from "@/domain/store-hours";
 import { formatHourShort, parseHHMM } from "@/domain/time";
 import { requireStore, storeHours } from "@/server/store";
@@ -15,7 +15,7 @@ export default async function StoreHomePage({ params }: PageProps<"/[loja]">) {
   const { loja } = await params;
   const store = await requireStore(loja);
   const base = `/${store.slug}`;
-  const chips = PROBLEM_LIST.filter((p) => p.id !== "outro").slice(0, 6);
+  const chips = (await getStoreProblems(store.id)).filter((p) => p.key !== "outro").slice(0, 6);
   return (
     <div className="flex flex-col gap-4">
       <GlassCard tone="strong" padding="lg" className="overflow-hidden">
@@ -55,7 +55,7 @@ export default async function StoreHomePage({ params }: PageProps<"/[loja]">) {
         </h2>
         <div className="grid grid-cols-2 gap-2.5">
           {chips.map((p) => (
-            <Link key={p.id} href={`${base}/ajuda?problema=${p.id}`} className="block">
+            <Link key={p.key} href={`${base}/ajuda?problema=${encodeURIComponent(p.key)}`} className="block">
               <GlassCard interactive padding="sm" className="flex h-full min-h-[84px] flex-col justify-between gap-2">
                 <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <ProblemIcon name={p.icon} className="size-[18px]" />

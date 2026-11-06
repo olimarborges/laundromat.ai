@@ -12,6 +12,7 @@ import {
 } from "ai";
 import { z } from "zod";
 import { getStoreById } from "@/server/store";
+import { getStoreProblems } from "@/server/problems";
 import { getSessionUser } from "@/server/auth";
 import { getConversationForViewer, getMachineById, loadMessages, saveMessages } from "@/server/support";
 import { makeTools, type AssistantContext } from "@/server/assistant/tools";
@@ -35,11 +36,12 @@ export async function POST(req: Request) {
   const conversation = await getConversationForViewer(parsed.data.conversationId);
   if (!conversation) return new Response("Atendimento não encontrado", { status: 404 });
 
-  const [store, machine, previous, user] = await Promise.all([
+  const [store, machine, previous, user, problems] = await Promise.all([
     getStoreById(conversation.store_id),
     getMachineById(conversation.machine_id),
     loadMessages(conversation.id),
     getSessionUser(),
+    getStoreProblems(conversation.store_id),
   ]);
 
   if (previous.filter((m) => m.role === "user").length >= MAX_USER_MESSAGES) {
@@ -51,6 +53,7 @@ export async function POST(req: Request) {
     conversation,
     machine,
     isCustomer: Boolean(user && conversation.customer_id === user.id),
+    problems,
   };
   const tools = makeTools(ctx);
   const messages = await validateUIMessages<UIMessage>({

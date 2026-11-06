@@ -11,13 +11,15 @@ import { OutcomePanel } from "@/components/chat/outcome-panel";
 import { VoiceOrb, type OrbState } from "@/components/glass/voice-orb";
 import { ProblemIcon } from "@/components/icon";
 import { useDictation, useSpeaker } from "@/hooks/use-voice";
-import { PROBLEM_LIST } from "@/domain/problems";
+import type { ProblemChip } from "@/domain/problems";
 import { cn } from "@/lib/utils";
 
 interface Props {
   conversationId: string;
   storeSlug: string;
   storeName: string;
+  /** Atalhos: problemas ativos desta lavanderia. */
+  chips: ProblemChip[];
   initialMessages: UIMessage[];
   visitorName: string | null;
   machineLabel: string | null;
@@ -31,6 +33,7 @@ export function ChatView({
   conversationId,
   storeSlug,
   storeName,
+  chips,
   initialMessages,
   visitorName,
   machineLabel,
@@ -210,9 +213,9 @@ export function ChatView({
               exit={{ opacity: 0, y: 8 }}
               className="-mx-3 mb-2 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]"
             >
-              {PROBLEM_LIST.slice(0, 10).map((p) => (
+              {chips.slice(0, 12).map((p) => (
                 <button
-                  key={p.id}
+                  key={p.key}
                   type="button"
                   onClick={() => {
                     dictation.cancel();

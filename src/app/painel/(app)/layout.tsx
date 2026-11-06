@@ -6,7 +6,8 @@ import { PanelBottomNav, PanelBottomNavStatic, PanelSidebar, PanelSidebarStatic 
 import { PanelRealtime } from "@/components/painel/panel-realtime";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { isSupabaseConfigured } from "@/lib/env";
-import { requireOwner } from "@/server/auth";
+import { getManagedStores, requireOwner } from "@/server/auth";
+import { StoreSwitcher } from "@/components/painel/store-switcher";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStoreById } from "@/server/store";
 import Link from "next/link";
@@ -65,22 +66,27 @@ const getBadges = cache(async () => {
     db.from("cases").select("id", { count: "exact", head: true }).eq("store_id", storeId).in("status", ["open", "waiting_owner"]),
     db.from("compensations").select("id", { count: "exact", head: true }).eq("store_id", storeId).eq("status", "pending"),
   ]);
-  const store = await getStoreById(storeId);
+  const [store, managed] = await Promise.all([getStoreById(storeId), getManagedStores(user.id, user.profile.role)]);
   return {
     storeId,
     store,
+    managed,
     isAdmin: user.profile.role === "admin",
     badges: { "/painel/casos": cases.count ?? 0, "/painel/compensacoes": comps.count ?? 0 },
   };
 });
 
 async function SidebarWithBadges() {
-  const { badges, storeId, store, isAdmin } = await getBadges();
+  const { badges, storeId, store, isAdmin, managed } = await getBadges();
   return (
     <>
       <div className="glass space-y-1 rounded-2xl p-3">
         <p className="text-[0.7rem] font-medium tracking-wide text-muted-foreground uppercase">Lavanderia</p>
-        <p className="truncate font-semibold">{store.name}</p>
+        {managed.length > 1 ? (
+          <StoreSwitcher stores={managed} activeId={store.id} />
+        ) : (
+          <p className="truncate font-semibold">{store.name}</p>
+        )}
         <Link href={`/${store.slug}`} target="_blank" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
           Ver como cliente <ExternalLink className="size-3" aria-hidden />
         </Link>

@@ -221,3 +221,85 @@ export const PROBLEM_LIST = PROBLEM_TYPES.map((id) => PROBLEMS[id]);
 export function isProblemType(value: unknown): value is ProblemType {
   return typeof value === "string" && (PROBLEM_TYPES as readonly string[]).includes(value);
 }
+
+// ───────────────────────────── Problemas por lavanderia ─────────────────────────────
+
+/**
+ * Problema como a loja enxerga: da plataforma (slug, com conferências automáticas)
+ * ou criado pelo dono (key "custom:<uuid>", só orientação + aviso ao lojista).
+ */
+export interface StoreProblem {
+  /** Identificador usado em conversas/casos: slug da plataforma ou "custom:<uuid>". */
+  key: string;
+  /** id no catálogo (null para "outro"). */
+  id: string | null;
+  builtin: boolean;
+  chip: string;
+  title: string;
+  icon: string;
+  needsMachine: boolean;
+  checks: Check[];
+  compensable: boolean;
+  priority: Priority;
+  steps: string[];
+  escalateWhen: string;
+  /** Sempre registrar caso para o lojista (problemas próprios marcados assim). */
+  alwaysNotify: boolean;
+}
+
+export const CUSTOM_PREFIX = "custom:";
+
+export function fromDefinition(def: ProblemDefinition): StoreProblem {
+  return {
+    key: def.id,
+    id: null,
+    builtin: def.id !== "outro",
+    chip: def.chip,
+    title: def.title,
+    icon: def.icon,
+    needsMachine: def.needsMachine,
+    checks: def.checks,
+    compensable: def.compensable,
+    priority: def.priority,
+    steps: def.steps,
+    escalateWhen: def.escalateWhen,
+    alwaysNotify: false,
+  };
+}
+
+/** "Outro problema" existe em toda loja (não aparece no catálogo). */
+export const OTHER_PROBLEM: StoreProblem = fromDefinition(PROBLEMS.outro);
+
+/** Solução em texto (um passo por linha) → passos. */
+export function solutionToSteps(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((l) => l.replace(/^\s*(\d+[.)]|[-•])\s*/, "").trim())
+    .filter(Boolean);
+}
+
+/** Ícones que o dono pode escolher para os problemas dele. */
+export const PROBLEM_ICONS = [
+  "MessageCircleQuestion",
+  "Hourglass",
+  "DoorClosed",
+  "Droplets",
+  "CreditCard",
+  "PawPrint",
+  "Wind",
+  "PlayCircle",
+  "Shirt",
+  "ArrowLeftRight",
+  "WifiOff",
+] as const;
+
+/** Atalho mostrado ao cliente (serializável para componentes do navegador). */
+export interface ProblemChip {
+  key: string;
+  chip: string;
+  icon: string;
+}
+
+export function toChip(p: StoreProblem): ProblemChip {
+  return { key: p.key, chip: p.chip, icon: p.icon };
+}

@@ -7,7 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { GridSkeleton, PageTitle, StatCard } from "@/components/painel/ui";
 import { LiveStoreStatus } from "@/components/painel/live-store-status";
 import { MarkReadButton } from "@/components/painel/mark-read-button";
-import { requireOwner } from "@/server/auth";
+import { getManagedStores, requireOwner } from "@/server/auth";
+import { StoreSwitcher } from "@/components/painel/store-switcher";
 import { getStoreById } from "@/server/store";
 import { getMachinesFull, getOverview } from "@/server/panel";
 import { describeSlot, nextNotificationAt } from "@/domain/notifications";
@@ -45,12 +46,19 @@ export default function PanelHome() {
 
 async function StoreLabel() {
   const user = await requireOwner();
-  const store = await getStoreById(user.profile.store_id!);
+  const [store, managed] = await Promise.all([
+    getStoreById(user.profile.store_id!),
+    getManagedStores(user.id, user.profile.role),
+  ]);
   return (
     <div className="glass -mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl px-4 py-2.5 text-sm lg:hidden">
-      <span>
-        Lavanderia: <span className="font-semibold">{store.name}</span>
-      </span>
+      {managed.length > 1 ? (
+        <StoreSwitcher stores={managed} activeId={store.id} className="w-full" />
+      ) : (
+        <span>
+          Lavanderia: <span className="font-semibold">{store.name}</span>
+        </span>
+      )}
       <span className="flex items-center gap-3">
         <Link href={`/${store.slug}`} target="_blank" className="text-primary hover:underline">
           Ver como cliente

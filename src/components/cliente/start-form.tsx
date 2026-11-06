@@ -5,7 +5,7 @@ import { startConversation, type StartState } from "@/app/[loja]/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProblemIcon } from "@/components/icon";
-import { PROBLEM_LIST } from "@/domain/problems";
+import type { ProblemChip } from "@/domain/problems";
 import type { MachineOption } from "@/server/machines-public";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,7 @@ function maskPhone(v: string) {
 export function StartForm({
   storeSlug,
   machines,
+  problems,
   defaultMachine,
   defaultProblem,
   defaultName,
@@ -29,6 +30,8 @@ export function StartForm({
 }: {
   storeSlug: string;
   machines: MachineOption[];
+  /** Problemas ativos desta lavanderia. */
+  problems: ProblemChip[];
   defaultMachine?: string;
   defaultProblem?: string;
   defaultName?: string;
@@ -175,15 +178,15 @@ export function StartForm({
           Sobre o que você quer falar? <span className="font-normal text-muted-foreground">(opcional)</span>
         </legend>
         <div className="flex flex-wrap gap-2" role="radiogroup">
-          {PROBLEM_LIST.map((p) => {
-            const selected = problem === p.id;
+          {problems.map((p) => {
+            const selected = problem === p.key;
             return (
               <button
-                key={p.id}
+                key={p.key}
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => setProblem(selected ? "" : p.id)}
+                onClick={() => setProblem(selected ? "" : p.key)}
                 className={cn(
                   "inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3 text-[0.82rem] font-medium transition active:scale-95",
                   selected ? "border-primary bg-primary text-primary-foreground" : "glass-subtle hover:border-primary/40",

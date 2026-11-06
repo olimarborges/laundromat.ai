@@ -114,3 +114,12 @@ No Windows, o build do OpenNext usa `nodeLinker: hoisted` (em `pnpm-workspace.ya
 pnpm create-admin voce@email.com SenhaForte123   # cria/promove um admin da plataforma
 pnpm create-owner dono@loja.com SenhaForte123     # dono da loja padrão (ou use o /admin)
 ```
+
+## Problemas por lavanderia e donos com várias lojas
+
+- **Donos ↔ lavanderias (N:N, tabela `store_members`):** um dono pode ter várias lavanderias e uma lavanderia pode ter vários donos (sócios). No painel, quem tem mais de uma loja troca a lavanderia ativa no seletor. O admin vincula ou desvincula donos em `/admin/lojas/{id}`.
+- **Catálogo (tabelas `problems` e `store_problems`):** em **Painel → Problemas**, o dono marca em quais lavanderias cada problema acontece (todas, algumas ou nenhuma). O assistente, os atalhos e o modo roteiro de cada loja só tratam os problemas marcados nela.
+  - **Da plataforma:** os 10 problemas originais, com conferências automáticas (pagamento, máquina e câmera).
+  - **Próprios do dono:** problema, frase do cliente, solução (um passo por linha) e ícone, com as opções "sempre me avisar" e "envolve uma máquina".
+  - **Solução por loja:** opcional, para quando uma loja for diferente das outras.
+  - **Sugestões:** o dono pode sugerir um problema próprio para outras lavanderias. Ele entra na fila em `/admin/sugestoes`, o admin revisa o texto e aprova, e o problema passa a aparecer como "Comunidade" para todos.

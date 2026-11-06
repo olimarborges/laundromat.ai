@@ -6,7 +6,7 @@ import { getSessionUser } from "@/server/auth";
 import { readVisitorToken } from "@/server/visitor";
 import { evaluateCompensation, type CompensationKind, type Verification } from "@/domain/compensation";
 import { nextNotificationAt, type Priority } from "@/domain/notifications";
-import { PROBLEMS, isProblemType, type ProblemType } from "@/domain/problems";
+import type { StoreProblem } from "@/domain/problems";
 import type {
   CaseRow,
   CompensationRow,
@@ -30,7 +30,7 @@ export async function createConversation(input: {
   name: string;
   phone: string | null;
   machineId: string | null;
-  problemType: ProblemType | null;
+  problemType: string | null;
   mode: "ai" | "script";
 }): Promise<ConversationRow> {
   const { data, error } = await db()
@@ -108,10 +108,10 @@ export async function getMachineById(id: string | null): Promise<MachineRow | nu
 export async function runChecks(
   storeId: string,
   machine: MachineRow | null,
-  problem: ProblemType,
+  problem: StoreProblem,
 ): Promise<{ evidence: Evidence; verification: Verification }> {
   const { cicclo, payments, camera } = getIntegrations();
-  const def = PROBLEMS[problem];
+  const def = problem;
   const evidence: Evidence = {};
   const verification: Verification = { payment: "unavailable", machine_log: "unavailable", camera: "unavailable" };
 
@@ -126,7 +126,7 @@ export async function runChecks(
         evidence.machine_log = { status: r.status, detail: r.detail };
         verification.machine_log = r.status;
       } else if (check === "camera" && machine) {
-        const r = await camera.checkMachine(storeId, machine.id, problem);
+        const r = await camera.checkMachine(storeId, machine.id, problem.key);
         evidence.camera = { status: r.status, detail: r.detail };
         verification.camera = r.status;
       }
@@ -146,14 +146,14 @@ export async function openCase(input: {
   store: StoreRow;
   conversation: ConversationRow;
   machine: MachineRow | null;
-  problemType: ProblemType;
+  problem: StoreProblem;
   priority?: Priority;
   summary: string;
   evidence: Evidence;
   actionsTaken: string[];
   needsPhysical?: boolean;
 }): Promise<CaseRow> {
-  const def = PROBLEMS[input.problemType];
+  const def = input.problem;
   const priority = input.priority ?? (input.needsPhysical ? "critical" : def.priority);
   const now = new Date();
   const notifyAt = nextNotificationAt(now, priority, input.store.notify_hours, input.store.timezone);
@@ -165,7 +165,7 @@ export async function openCase(input: {
       store_id: input.store.id,
       conversation_id: input.conversation.id,
       machine_id: input.machine?.id ?? null,
-      problem_type: input.problemType,
+      problem_type: def.key,
       priority,
       status: "waiting_owner",
       title,
@@ -188,7 +188,7 @@ export async function openCase(input: {
     body: input.summary,
     deliver_at: notifyAt.toISOString(),
   });
-  await updateConversation(input.conversation.id, { status: "escalated", problem_type: input.problemType });
+  await updateConversation(input.conversation.id, { status: "escalated", problem_type: def.key });
   return caseRow;
 }
 
@@ -197,11 +197,12 @@ export async function proposeCompensation(input: {
   store: StoreRow;
   conversation: ConversationRow;
   caseRow: CaseRow;
+  problem: StoreProblem;
   machine: MachineRow | null;
   kind: CompensationKind;
   verification: Verification;
 }): Promise<CompensationRow> {
-  const def = PROBLEMS[(isProblemType(input.caseRow.problem_type) ? input.caseRow.problem_type : "outro") as ProblemType];
+  const def = input.problem;
   const amount = input.machine?.price_cents ?? 0;
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);

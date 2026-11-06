@@ -3,6 +3,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getSessionUser } from "@/server/auth";
 import { getMachineOptions } from "@/server/machines-public";
 import type { StoreRow } from "@/server/types";
+import { getStoreProblems } from "@/server/problems";
+import { toChip } from "@/domain/problems";
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 
@@ -18,11 +20,12 @@ export async function StartFormLoader({
   machineCode?: string;
 }) {
   const [sp, user] = await Promise.all([searchParams, getSessionUser()]);
-  const machines = await getMachineOptions(store.id);
+  const [machines, problems] = await Promise.all([getMachineOptions(store.id), getStoreProblems(store.id)]);
   return (
     <StartForm
       storeSlug={store.slug}
       machines={machines}
+      problems={problems.map(toChip)}
       defaultMachine={machineCode ?? one(sp.maquina)}
       defaultProblem={one(sp.problema)}
       defaultName={user?.profile?.full_name ?? undefined}

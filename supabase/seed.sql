@@ -122,3 +122,8 @@ begin
          '{"payment":"confirmed","machine_log":"confirmed","camera":"confirmed"}', now() - (g * 4 || ' days')::interval, now() - (g * 4 || ' days')::interval
   from generate_series(1, 6) g;
 end $$;
+
+-- Problemas da plataforma marcados na EasyWash (em banco novo o seed roda depois das migrations).
+insert into public.store_problems (store_id, problem_id)
+select '00000000-0000-4000-8000-000000000001', id from public.problems where builtin
+on conflict do nothing;

@@ -17,7 +17,7 @@ import {
 import { storeHours } from "@/server/store";
 import { cycleFitsBeforeClose, getStoreStatus } from "@/domain/store-hours";
 import { describeSlot } from "@/domain/notifications";
-import { PROBLEM_TYPES, PROBLEMS, type ProblemType } from "@/domain/problems";
+import { OTHER_PROBLEM, type StoreProblem } from "@/domain/problems";
 import { effectiveStatus, minutesLeft, STATUS_LABEL } from "@/domain/machines";
 import { labelKind } from "@/domain/compensation";
 import type { CaseRow, ConversationRow, Evidence, MachineRow, StoreRow } from "@/server/types";
@@ -28,9 +28,9 @@ export interface AssistantContext {
   conversation: ConversationRow;
   machine: MachineRow | null;
   isCustomer: boolean;
+  /** Problemas ativos nesta lavanderia (escolhidos pelo dono) + "outro". */
+  problems: StoreProblem[];
 }
-
-const problemEnum = z.enum(PROBLEM_TYPES);
 
 /**
  * Ferramentas do atendente. A IA decide QUANDO usar; as regras (conferências,
@@ -39,7 +39,13 @@ const problemEnum = z.enum(PROBLEM_TYPES);
 export function makeTools(ctx: AssistantContext) {
   // Estado da conversa durante a requisição.
   let machine = ctx.machine;
-  let lastChecks: { problem: ProblemType; evidence: Evidence; verification: Verification } | null = null;
+  let lastChecks: { problem: StoreProblem; evidence: Evidence; verification: Verification } | null = null;
+  // Só os problemas desta lavanderia são aceitos (a IA recebe a lista no prompt).
+  const keys = ctx.problems.map((p) => p.key);
+  const problemEnum = z
+    .string()
+    .describe(`Tipo do problema. Use exatamente uma destas chaves: ${keys.join(", ")}`);
+  const findProblem = (key: string): StoreProblem => ctx.problems.find((p) => p.key === key) ?? OTHER_PROBLEM;
   let openedCase: CaseRow | null = null;
 
   async function resolveMachine(code?: string | null) {
@@ -121,15 +127,24 @@ export function makeTools(ctx: AssistantContext) {
       }),
       execute: async ({ problema, codigo_maquina }) => {
         const m = await resolveMachine(codigo_maquina);
-        const def = PROBLEMS[problema];
+        const def = findProblem(problema);
         if (def.needsMachine && !m) {
           return { precisa_maquina: true, mensagem: "Pergunte ao cliente qual é a máquina (código na etiqueta, ex.: L1)." };
         }
-        const { evidence, verification } = await runChecks(ctx.store.id, m, problema);
-        lastChecks = { problem: problema, evidence, verification };
-        await updateConversation(ctx.conversation.id, { problem_type: problema });
+        const { evidence, verification } = await runChecks(ctx.store.id, m, def);
+        lastChecks = { problem: def, evidence, verification };
+        await updateConversation(ctx.conversation.id, { problem_type: def.key });
 
-        if (problema === "maquininha_travada") {
+        if (!def.builtin && def.key !== OTHER_PROBLEM.key) {
+          // Problema cadastrado pelo dono: orientação da loja; registra caso quando ele pediu.
+          return {
+            problema: def.title,
+            passos: def.steps,
+            avisar_lojista_sempre: def.alwaysNotify,
+            quando_chamar_lojista: def.escalateWhen,
+          };
+        }
+        if (def.key === "maquininha_travada") {
           await createAdminClient().from("incidents").insert({
             store_id: ctx.store.id,
             kind: "terminal_frozen",
@@ -142,7 +157,7 @@ export function makeTools(ctx: AssistantContext) {
             passos: def.steps,
           };
         }
-        if (problema === "sem_internet" && ctx.store.internet_status === "offline") {
+        if (def.key === "sem_internet" && ctx.store.internet_status === "offline") {
           return { conferencias: evidence, internet_da_loja: "fora do ar", passos: def.steps };
         }
         return {
@@ -176,14 +191,15 @@ export function makeTools(ctx: AssistantContext) {
       }),
       execute: async ({ problema, resumo, acoes_ja_tomadas, precisa_presenca_fisica }) => {
         if (openedCase) return { ja_aberto: true, caso_id: openedCase.id };
+        const def = findProblem(problema);
         const checks =
-          lastChecks?.problem === problema ? lastChecks : { problem: problema, ...(await runChecks(ctx.store.id, machine, problema)) };
+          lastChecks?.problem.key === def.key ? lastChecks : { problem: def, ...(await runChecks(ctx.store.id, machine, def)) };
         lastChecks = checks;
         openedCase = await openCase({
           store: ctx.store,
           conversation: ctx.conversation,
           machine,
-          problemType: problema,
+          problem: def,
           summary: resumo,
           evidence: checks.evidence,
           actionsTaken: acoes_ja_tomadas,
@@ -212,7 +228,7 @@ export function makeTools(ctx: AssistantContext) {
             store: ctx.store,
             conversation: ctx.conversation,
             machine,
-            problemType: lastChecks.problem,
+            problem: lastChecks.problem,
             summary: motivo,
             evidence: lastChecks.evidence,
             actionsTaken: [`Proposta: ${labelKind(tipo)}`],
@@ -222,6 +238,7 @@ export function makeTools(ctx: AssistantContext) {
           store: ctx.store,
           conversation: ctx.conversation,
           caseRow: openedCase,
+          problem: lastChecks.problem,
           machine,
           kind: tipo,
           verification: lastChecks.verification,

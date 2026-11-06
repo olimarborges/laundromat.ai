@@ -6,7 +6,7 @@ import { getStoreBySlug } from "@/server/store";
 import { getSessionUser } from "@/server/auth";
 import { ensureVisitorToken } from "@/server/visitor";
 import { createConversation, getMachineByCode } from "@/server/support";
-import { PROBLEMS, isProblemType } from "@/domain/problems";
+import { findStoreProblem } from "@/server/problems";
 
 export interface StartState {
   error?: string;
@@ -71,7 +71,8 @@ export async function startConversation(_prev: StartState, formData: FormData): 
     code ? getMachineByCode(store.id, code) : Promise.resolve(null),
     ensureVisitorToken(),
   ]);
-  const problemType = problem && isProblemType(problem) ? problem : null;
+  const chosen = await findStoreProblem(store.id, problem);
+  const problemType = chosen && chosen.key !== "outro" ? chosen.key : null;
 
   const conv = await createConversation({
     storeId: store.id,
@@ -86,7 +87,7 @@ export async function startConversation(_prev: StartState, formData: FormData): 
 
   const params = new URLSearchParams();
   if (problemType) {
-    params.set("primeira", `${PROBLEMS[problemType].chip}${machine ? ` (máquina ${machine.code})` : ""}`);
+    params.set("primeira", `${chosen!.chip}${machine ? ` (máquina ${machine.code})` : ""}`);
   }
   if (voice === "1") params.set("voz", "1");
   redirect(`/atendimento/${conv.id}${params.size ? `?${params}` : ""}`);

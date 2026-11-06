@@ -6,7 +6,7 @@ import { GridSkeleton, PageTitle, StatCard } from "@/components/painel/ui";
 import { HourBars, RankedBars, WhoResolvedBars } from "@/components/painel/report-charts";
 import { requireOwner } from "@/server/auth";
 import { getReports } from "@/server/panel";
-import { PROBLEMS, isProblemType } from "@/domain/problems";
+import { problemTitles } from "@/server/problems";
 import { formatBRL } from "@/domain/compensation";
 import { zonedParts } from "@/domain/time";
 
@@ -23,7 +23,6 @@ export default function RelatoriosPage() {
   );
 }
 
-const label = (t: string | null) => (t === "duvida" ? "Dúvida de uso" : isProblemType(t) ? PROBLEMS[t].title : "Outro");
 
 async function Reports() {
   await connection();
@@ -41,6 +40,8 @@ async function Reports() {
       return acc;
     }, {});
 
+  const titles = await problemTitles(r.conversations.map((c) => c.problem_type));
+  const label = (t: string | null) => (t ? (titles[t] ?? "Outro") : "Outro");
   const byType = Object.entries(countBy(r.conversations, (c) => label(c.problem_type)))
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);

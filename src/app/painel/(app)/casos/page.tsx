@@ -10,6 +10,7 @@ import { requireOwner } from "@/server/auth";
 import { listCases } from "@/server/panel";
 import { requestNow } from "@/server/clock";
 import { PROBLEMS, isProblemType } from "@/domain/problems";
+// Problemas próprios das lojas usam o ícone padrão; o título vem do próprio caso.
 
 export const metadata = { title: "Casos" };
 

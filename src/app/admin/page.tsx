@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink, LayoutDashboard, MapPin, Plus, Store, WashingMachine } from "lucide-react";
+import { ExternalLink, LayoutDashboard, Lightbulb, MapPin, Plus, Store, WashingMachine } from "lucide-react";
 import { GlassCard } from "@/components/glass/glass-card";
 import { PageTitle, StatCard } from "@/components/painel/ui";
 import { OpenPanelButton } from "@/components/admin/open-panel-button";
@@ -18,6 +18,10 @@ export default async function AdminHome() {
     .eq("cases.status", "waiting_owner")
     .order("created_at");
   const stores = (data ?? []) as Row[];
+  const { count: pendingSuggestions } = await db
+    .from("problems")
+    .select("id", { count: "exact", head: true })
+    .eq("visibility", "pending");
   const active = stores.filter((s) => s.active).length;
   const machines = stores.reduce((n, s) => n + (s.machines[0]?.count ?? 0), 0);
   const noOwner = stores.filter((s) => !s.owner_email).length;
@@ -28,12 +32,23 @@ export default async function AdminHome() {
         title="Lavanderias"
         description="Cadastre lavanderias, marque no mapa e dê acesso aos donos."
         action={
+          <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/sugestoes"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border bg-background/60 px-4 font-medium"
+          >
+            <Lightbulb className="size-4" aria-hidden /> Sugestões
+            {pendingSuggestions ? (
+              <span className="rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">{pendingSuggestions}</span>
+            ) : null}
+          </Link>
           <Link
             href="/admin/lojas/nova"
             className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 font-semibold text-primary-foreground shadow-md shadow-primary/25"
           >
             <Plus className="size-4" aria-hidden /> Nova lavanderia
           </Link>
+          </div>
         }
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
