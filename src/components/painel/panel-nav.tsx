@@ -11,6 +11,8 @@ import {
   LayoutDashboard,
   Menu,
   Settings,
+  ShieldCheck,
+  Store,
   WashingMachine,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -29,14 +31,24 @@ export const PANEL_ITEMS = [
 
 const MOBILE = ["/painel", "/painel/casos", "/painel/maquinas", "/painel/simulador"];
 
+/** Atalhos extras: o admin sempre consegue voltar para a administração (inclusive no app instalado). */
+function extraItems(isAdmin?: boolean, storeSlug?: string) {
+  return [
+    ...(storeSlug ? [{ href: `/${storeSlug}`, label: "Ver como cliente", icon: Store }] : []),
+    ...(isAdmin ? [{ href: "/admin", label: "Administração", icon: ShieldCheck }] : []),
+  ];
+}
+
+type NavProps = { badges?: Record<string, number>; isAdmin?: boolean; storeSlug?: string };
+
 function useActive() {
   const pathname = usePathname();
   return (href: string) => (href === "/painel" ? pathname === "/painel" : pathname.startsWith(href));
 }
 
-export function PanelSidebar({ badges }: { badges?: Record<string, number> }) {
+export function PanelSidebar({ badges, isAdmin, storeSlug }: NavProps) {
   const isActive = useActive();
-  return <SidebarLinks isActive={isActive} badges={badges} />;
+  return <SidebarLinks isActive={isActive} badges={badges} isAdmin={isAdmin} storeSlug={storeSlug} />;
 }
 
 /** Versão sem hooks de URL, para fallback de Suspense (não bloqueia o prerender). */
@@ -44,7 +56,8 @@ export function PanelSidebarStatic() {
   return <SidebarLinks isActive={() => false} />;
 }
 
-function SidebarLinks({ isActive, badges }: { isActive: (href: string) => boolean; badges?: Record<string, number> }) {
+function SidebarLinks({ isActive, badges, isAdmin, storeSlug }: NavProps & { isActive: (href: string) => boolean }) {
+  const extras = extraItems(isAdmin, storeSlug);
   return (
     <nav aria-label="Painel" className="flex flex-col gap-1">
       {PANEL_ITEMS.map(({ href, label, icon: Icon }) => {
@@ -76,20 +89,36 @@ function SidebarLinks({ isActive, badges }: { isActive: (href: string) => boolea
           </Link>
         );
       })}
+      {extras.length ? <div className="my-2 border-t border-border/60" /> : null}
+      {extras.map(({ href, label, icon: Icon }) => (
+        <Link
+          key={href}
+          href={href}
+          className={cn(
+            "flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
+            href === "/admin"
+              ? "bg-primary/10 text-primary hover:bg-primary/15"
+              : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+          )}
+        >
+          <Icon className="size-[18px]" aria-hidden />
+          <span className="flex-1">{label}</span>
+        </Link>
+      ))}
     </nav>
   );
 }
 
-export function PanelBottomNav({ badges }: { badges?: Record<string, number> }) {
+export function PanelBottomNav({ badges, isAdmin, storeSlug }: NavProps) {
   const isActive = useActive();
-  return <BottomLinks isActive={isActive} badges={badges} />;
+  return <BottomLinks isActive={isActive} badges={badges} isAdmin={isAdmin} storeSlug={storeSlug} />;
 }
 
 export function PanelBottomNavStatic() {
   return <BottomLinks isActive={() => false} />;
 }
 
-function BottomLinks({ isActive, badges }: { isActive: (href: string) => boolean; badges?: Record<string, number> }) {
+function BottomLinks({ isActive, badges, isAdmin, storeSlug }: NavProps & { isActive: (href: string) => boolean }) {
   const items = PANEL_ITEMS.filter((i) => MOBILE.includes(i.href));
   return (
     <nav aria-label="Painel" className="pb-safe fixed inset-x-0 bottom-0 z-40 px-3 lg:hidden">
@@ -131,7 +160,7 @@ function BottomLinks({ isActive, badges }: { isActive: (href: string) => boolean
                 <SheetTitle>Painel</SheetTitle>
               </SheetHeader>
               <div className="px-4">
-                <PanelSidebar badges={badges} />
+                <PanelSidebar badges={badges} isAdmin={isAdmin} storeSlug={storeSlug} />
               </div>
             </SheetContent>
           </Sheet>

@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, cache } from "react";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SetupNotice } from "@/components/setup-notice";
@@ -38,7 +38,12 @@ export default function PanelLayout({ children }: LayoutProps<"/painel">) {
         <header className="pt-safe sticky top-0 z-30 lg:hidden">
           <div className="glass mt-2 flex items-center justify-between rounded-2xl py-1.5 pr-1.5 pl-3">
             <Brand href="/painel" name="Painel do lojista" subtitle="laundromat.ai" />
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <Suspense fallback={null}>
+                <AdminShortcut />
+              </Suspense>
+              <ThemeToggle />
+            </div>
           </div>
         </header>
         <main id="conteudo" className="flex-1 pt-4 pb-32 lg:pt-6 lg:pb-10">
@@ -52,7 +57,7 @@ export default function PanelLayout({ children }: LayoutProps<"/painel">) {
   );
 }
 
-async function getBadges() {
+const getBadges = cache(async () => {
   const user = await requireOwner();
   const storeId = user.profile.store_id as string;
   const db = createAdminClient();
@@ -67,7 +72,7 @@ async function getBadges() {
     isAdmin: user.profile.role === "admin",
     badges: { "/painel/casos": cases.count ?? 0, "/painel/compensacoes": comps.count ?? 0 },
   };
-}
+});
 
 async function SidebarWithBadges() {
   const { badges, storeId, store, isAdmin } = await getBadges();
@@ -85,13 +90,27 @@ async function SidebarWithBadges() {
           </Link>
         ) : null}
       </div>
-      <PanelSidebar badges={badges} />
+      <PanelSidebar badges={badges} isAdmin={isAdmin} storeSlug={store.slug} />
       <PanelRealtime storeId={storeId} />
     </>
   );
 }
 
 async function BottomWithBadges() {
-  const { badges } = await getBadges();
-  return <PanelBottomNav badges={badges} />;
+  const { badges, isAdmin, store } = await getBadges();
+  return <PanelBottomNav badges={badges} isAdmin={isAdmin} storeSlug={store.slug} />;
+}
+
+/** Botão fixo no topo (celular/app instalado) para o admin voltar à administração. */
+async function AdminShortcut() {
+  const { isAdmin } = await getBadges();
+  if (!isAdmin) return null;
+  return (
+    <Link
+      href="/admin"
+      className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary/10 px-3 text-sm font-medium text-primary"
+    >
+      <ShieldCheck className="size-4" aria-hidden /> Admin
+    </Link>
+  );
 }

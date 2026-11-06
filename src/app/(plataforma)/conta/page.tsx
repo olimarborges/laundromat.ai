@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { CheckCircle2, CircleUserRound, Gift, MessageSquare } from "lucide-react";
+import { CheckCircle2, ChevronRight, CircleUserRound, Gift, LayoutDashboard, MessageSquare, ShieldCheck } from "lucide-react";
 import { GlassCard } from "@/components/glass/glass-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignOutButton } from "@/components/auth/sign-out-button";
@@ -47,9 +47,42 @@ async function Account() {
       .limit(10),
   ]);
   const points = user.profile?.points ?? 0;
+  const role = user.profile?.role;
 
   return (
     <div className="space-y-4">
+      {role === "admin" || role === "owner" ? (
+        <section aria-label="Acessos de gestão" className="space-y-2">
+          {role === "admin" ? (
+            <Link href="/admin" className="block">
+              <GlassCard tone="strong" interactive padding="md" className="flex items-center gap-3 ring-1 ring-primary/30">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                  <ShieldCheck className="size-5" aria-hidden />
+                </span>
+                <span className="flex-1">
+                  <span className="block font-semibold">Administração da plataforma</span>
+                  <span className="block text-xs text-muted-foreground">Lavanderias, donos e acessos</span>
+                </span>
+                <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+              </GlassCard>
+            </Link>
+          ) : null}
+          {role === "owner" || user.profile?.store_id ? (
+            <Link href="/painel" className="block">
+              <GlassCard tone="strong" interactive padding="md" className="flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+                  <LayoutDashboard className="size-5" aria-hidden />
+                </span>
+                <span className="flex-1">
+                  <span className="block font-semibold">Painel do lojista</span>
+                  <span className="block text-xs text-muted-foreground">Casos, compensações, máquinas e relatórios</span>
+                </span>
+                <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+              </GlassCard>
+            </Link>
+          ) : null}
+        </section>
+      ) : null}
       <GlassCard tone="strong" padding="lg" className="space-y-1">
         <p className="text-sm text-muted-foreground">Olá{user.profile?.full_name ? `, ${user.profile.full_name.split(" ")[0]}` : ""}</p>
         <div className="flex items-end justify-between">

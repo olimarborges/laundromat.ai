@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { LayoutDashboard, ShieldCheck } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SignOutButton } from "@/components/auth/sign-out-button";
@@ -12,7 +12,7 @@ export const metadata = { title: { default: "Administração", template: "%s · 
 /** Administração da plataforma (multi-lavanderia). */
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   if (!isSupabaseConfigured()) return <SetupNotice />;
-  await requireAdmin();
+  const user = await requireAdmin();
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-3 pb-16 lg:px-6">
       <header className="pt-safe sticky top-0 z-30">
@@ -24,6 +24,14 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
             </span>
           </div>
           <div className="flex items-center gap-1">
+            {user.profile.store_id ? (
+              <Link
+                href="/painel"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-accent px-3 text-sm font-medium text-accent-foreground"
+              >
+                <LayoutDashboard className="size-4" aria-hidden /> Painel
+              </Link>
+            ) : null}
             <Link href="/" className="hidden rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-muted/60 sm:block">
               Ver app
             </Link>
