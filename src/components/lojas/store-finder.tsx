@@ -19,7 +19,7 @@ const StoreMap = dynamic(() => import("./store-map"), {
 const normalize = (s: string) =>
   s
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/\p{M}/gu, "")
     .toLowerCase();
 
 const hours = (s: PublicStore) => ({

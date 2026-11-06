@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { mergeTranscripts } from "@/domain/speech";
 
 /**
  * Voz pelo navegador com a Web Speech API (gratuita). No Chrome o reconhecimento é feito
@@ -91,9 +92,10 @@ export function useDictation(onTranscript: (text: string) => void) {
     rec.onstart = () => setState("listening");
     rec.onresult = (e) => {
       if (recRef.current !== rec) return; // sessão cancelada (ex.: mensagem já enviada)
-      let text = "";
-      for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
-      cbRef.current(text.replace(/\s+/g, " ").trimStart());
+      // Chrome no Android repete o texto acumulado em cada resultado: junta sem duplicar.
+      const parts: string[] = [];
+      for (let i = 0; i < e.results.length; i++) parts.push(e.results[i][0].transcript);
+      cbRef.current(mergeTranscripts(parts));
     };
     rec.onerror = (e) => {
       if (recRef.current !== rec) return;
