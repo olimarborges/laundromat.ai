@@ -13,6 +13,9 @@ import type { Evidence } from "@/server/types";
 
 export const metadata = { title: "Caso" };
 
+const formatPhone = (d: string) =>
+  d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}` : `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+
 export default function CasePage({ params }: PageProps<"/painel/casos/[id]">) {
   return (
     <div className="space-y-4">
@@ -61,7 +64,7 @@ async function CaseDetail({ params }: { params: Promise<{ id: string }> }) {
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <User className="size-4" aria-hidden />
               {conversation.visitor_name ?? "Cliente"}
-              {conversation.visitor_phone ? ` · (${conversation.visitor_phone.slice(0, 2)}) ${conversation.visitor_phone.slice(2)}` : ""}
+              {conversation.visitor_phone ? ` · ${formatPhone(conversation.visitor_phone)}` : ""}
               {conversation.phone_verified ? " · celular confirmado" : ""}
             </p>
           ) : null}

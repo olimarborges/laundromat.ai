@@ -36,6 +36,15 @@ function useActive() {
 
 export function PanelSidebar({ badges }: { badges?: Record<string, number> }) {
   const isActive = useActive();
+  return <SidebarLinks isActive={isActive} badges={badges} />;
+}
+
+/** Versão sem hooks de URL, para fallback de Suspense (não bloqueia o prerender). */
+export function PanelSidebarStatic() {
+  return <SidebarLinks isActive={() => false} />;
+}
+
+function SidebarLinks({ isActive, badges }: { isActive: (href: string) => boolean; badges?: Record<string, number> }) {
   return (
     <nav aria-label="Painel" className="flex flex-col gap-1">
       {PANEL_ITEMS.map(({ href, label, icon: Icon }) => {
@@ -73,6 +82,14 @@ export function PanelSidebar({ badges }: { badges?: Record<string, number> }) {
 
 export function PanelBottomNav({ badges }: { badges?: Record<string, number> }) {
   const isActive = useActive();
+  return <BottomLinks isActive={isActive} badges={badges} />;
+}
+
+export function PanelBottomNavStatic() {
+  return <BottomLinks isActive={() => false} />;
+}
+
+function BottomLinks({ isActive, badges }: { isActive: (href: string) => boolean; badges?: Record<string, number> }) {
   const items = PANEL_ITEMS.filter((i) => MOBILE.includes(i.href));
   return (
     <nav aria-label="Painel" className="pb-safe fixed inset-x-0 bottom-0 z-40 px-3 lg:hidden">

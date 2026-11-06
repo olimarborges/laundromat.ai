@@ -92,14 +92,15 @@ export function ChatView({
 
   // Primeira mensagem vinda do formulário (chip escolhido) + limpa a URL.
   useEffect(() => {
-    if (sentFirst.current) return;
-    sentFirst.current = true;
-    if (firstMessage && initialMessages.length === 0) {
-      sendMessage({ text: firstMessage });
-    } else if (initialMessages.length === 0) {
-      sendMessage({ text: "Olá" });
-    }
-    if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
+    if (sentFirst.current || initialMessages.length > 0) return;
+    // Agendado (e cancelado no cleanup) para sobreviver ao mount duplo do modo estrito:
+    // um envio feito no primeiro mount é abortado quando o React desmonta/remonta.
+    const t = setTimeout(() => {
+      sentFirst.current = true;
+      sendMessage({ text: firstMessage ?? "Olá" });
+      if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
+    }, 0);
+    return () => clearTimeout(t);
   }, [firstMessage, initialMessages.length, sendMessage]);
 
   useEffect(() => {

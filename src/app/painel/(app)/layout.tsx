@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SetupNotice } from "@/components/setup-notice";
-import { PanelBottomNav, PanelSidebar } from "@/components/painel/panel-nav";
+import { PanelBottomNav, PanelBottomNavStatic, PanelSidebar, PanelSidebarStatic } from "@/components/painel/panel-nav";
 import { PanelRealtime } from "@/components/painel/panel-realtime";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -23,7 +23,7 @@ export default function PanelLayout({ children }: LayoutProps<"/painel">) {
     <div className="mx-auto flex min-h-dvh w-full max-w-7xl gap-6 px-3 lg:px-6">
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-6 py-6 lg:flex">
         <Brand href="/painel" subtitle="Painel do lojista" />
-        <Suspense fallback={<PanelSidebar />}>
+        <Suspense fallback={<PanelSidebarStatic />}>
           <SidebarWithBadges />
         </Suspense>
         <div className="mt-auto space-y-2">
@@ -42,7 +42,7 @@ export default function PanelLayout({ children }: LayoutProps<"/painel">) {
           {children}
         </main>
       </div>
-      <Suspense fallback={<PanelBottomNav />}>
+      <Suspense fallback={<PanelBottomNavStatic />}>
         <BottomWithBadges />
       </Suspense>
     </div>

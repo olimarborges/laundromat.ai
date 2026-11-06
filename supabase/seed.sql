@@ -82,6 +82,7 @@ begin
          - (floor(random() * 15) || ' hours')::interval - (floor(random() * 60) || ' minutes')::interval;
     -- concentra no pico (fim de tarde / noite)
     d := date_trunc('day', d) + make_interval(hours => (array[7,9,10,12,17,18,18,19,19,20,20,21])[1 + floor(random()*12)::int], mins => floor(random()*59)::int);
+    if d > now() - interval '1 hour' then d := d - interval '1 day'; end if;
     mid := case when t in ('maquininha_travada','duvida') then null else m[1 + floor(random() * 4)::int] end;
     by_ai := random() < 0.74;
     insert into public.conversations (store_id, visitor_name, machine_id, problem_type, status, resolved_by, summary, created_at, resolved_at)
@@ -104,11 +105,12 @@ begin
 
   -- pagamentos de demonstração (movimento diário)
   insert into public.payments (store_id, machine_id, amount_cents, method, status, card_last4, created_at)
-  select s, m[1 + floor(random() * 4)::int], (array[1800,1600])[1 + floor(random()*2)::int],
+  select * from (select s, m[1 + floor(random() * 4)::int], (array[1800,1600])[1 + floor(random()*2)::int],
          (array['credito','debito','pix'])[1 + floor(random()*3)::int], 'approved',
          lpad(floor(random()*9999)::text, 4, '0'),
          date_trunc('day', now() - (g % 30 || ' days')::interval) + make_interval(hours => 6 + floor(random()*17)::int, mins => floor(random()*59)::int)
-  from generate_series(1, 360) g;
+  from generate_series(1, 360) g) p(store_id, machine_id, amount_cents, method, status, card_last4, created_at)
+  where p.created_at < now() - interval '1 hour'; -- nunca no futuro nem recente (não confunde as conferências)
 
   insert into public.compensations (store_id, kind, amount_cents, status, decision, decision_reasons, verification, created_at, decided_at)
   select s, 'reliberacao', 1800, 'executed', 'needs_owner', '{"(demo)"}',

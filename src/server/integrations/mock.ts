@@ -50,6 +50,7 @@ const cicclo: CiccloGateway = {
       .eq("store_id", storeId)
       .eq("machine_id", machineId)
       .gte("created_at", since(minutes))
+      .lte("created_at", new Date().toISOString())
       .order("created_at", { ascending: true });
     return (data ?? []) as MachineEventRow[];
   },
@@ -122,6 +123,7 @@ const payments: PaymentGateway = {
       .select("*")
       .eq("store_id", storeId)
       .gte("created_at", since(minutes))
+      .lte("created_at", new Date().toISOString())
       .order("created_at", { ascending: false });
     if (machineId) q = q.eq("machine_id", machineId);
     const { data } = await q;
