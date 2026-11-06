@@ -103,8 +103,12 @@ export function ChatView({
     dictation.start();
   };
   const submit = () => {
-    if (dictation.listening) dictation.stop();
-    send(input);
+    const text = input.trim();
+    if (!text || busy) return;
+    // Cancela o ditado antes: senão o resultado final chega depois e reescreve a caixa.
+    dictation.cancel();
+    dictationBase.current = "";
+    send(text);
   };
 
   // Primeira mensagem vinda do formulário (chip escolhido) + limpa a URL.
@@ -210,7 +214,11 @@ export function ChatView({
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => send(p.chip)}
+                  onClick={() => {
+                    dictation.cancel();
+                    dictationBase.current = "";
+                    send(p.chip);
+                  }}
                   className="glass-subtle inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.8rem] font-medium active:scale-95"
                 >
                   <ProblemIcon name={p.icon} className="size-3.5 text-primary" />
@@ -250,7 +258,6 @@ export function ChatView({
           <button
             type="button"
             onClick={toggleDictation}
-            disabled={busy}
             aria-pressed={dictation.listening}
             className={cn(
               "relative flex size-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 disabled:opacity-50",

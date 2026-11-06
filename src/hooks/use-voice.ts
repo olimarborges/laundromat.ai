@@ -90,18 +90,20 @@ export function useDictation(onTranscript: (text: string) => void) {
     rec.maxAlternatives = 1;
     rec.onstart = () => setState("listening");
     rec.onresult = (e) => {
+      if (recRef.current !== rec) return; // sessão cancelada (ex.: mensagem já enviada)
       let text = "";
       for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
       cbRef.current(text.replace(/\s+/g, " ").trimStart());
     };
     rec.onerror = (e) => {
+      if (recRef.current !== rec) return;
       const msg = dictationErrorMessage(e.error);
       if (msg) setError(msg);
       if (process.env.NODE_ENV !== "production") console.warn("[voz]", e.error, e.message);
     };
     rec.onend = () => {
-      recRef.current = null;
-      setState("idle");
+      if (recRef.current === rec) recRef.current = null;
+      setState((s) => (recRef.current ? s : "idle"));
     };
     recRef.current = rec;
     setState("starting");
@@ -113,13 +115,22 @@ export function useDictation(onTranscript: (text: string) => void) {
     }
   }, []);
 
+  /** Termina o ditado e mantém o último trecho reconhecido. */
   const stop = useCallback(() => {
     recRef.current?.stop();
   }, []);
 
+  /** Cancela na hora e descarta qualquer resultado que ainda chegue (usado ao enviar). */
+  const cancel = useCallback(() => {
+    const rec = recRef.current;
+    recRef.current = null;
+    rec?.abort();
+    setState("idle");
+  }, []);
+
   useEffect(() => () => recRef.current?.abort(), []);
 
-  return { supported, state, listening: state !== "idle", error, clearError: () => setError(null), start, stop };
+  return { supported, state, listening: state !== "idle", error, clearError: () => setError(null), start, stop, cancel };
 }
 
 export function cleanForSpeech(text: string) {

@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: LayoutProps<"/[loja]">): Prom
   const { loja } = await params;
   const store = await requireStore(loja);
   return {
-    title: { default: `${store.name} · Atendimento`, template: `%s · ${store.name}` },
+    title: { absolute: `${store.name} · Atendimento`, template: `%s · ${store.name}` },
     description: `Assistente virtual da ${store.name}: resolva problemas pelo celular, sem baixar aplicativo.`,
   };
 }

@@ -20,27 +20,27 @@ export default async function StoreHomePage({ params }: PageProps<"/[loja]">) {
     <div className="flex flex-col gap-4">
       <GlassCard tone="strong" padding="lg" className="overflow-hidden">
         <div className="flex items-center gap-2 text-xs font-medium text-primary">
-          <Sparkles className="size-4" aria-hidden /> Assistente virtual · 24h no seu celular
+          <Sparkles className="size-4" aria-hidden /> Seu assistente virtual · sempre à mão
         </div>
         <h1 className="mt-3 text-[1.9rem] leading-[1.1] font-semibold tracking-tight text-balance">
-          Oi! Algum problema na {store.name}?
+          Boas-vindas à {store.name}!
         </h1>
         <p className="mt-2 text-[0.95rem] text-muted-foreground">
-          Eu confiro o pagamento e a máquina e resolvo na hora. Sem baixar aplicativo, sem cadastro.
+          Como podemos te ajudar hoje? Tire dúvidas, aprenda a usar as máquinas ou resolva qualquer imprevisto na hora, pelo celular. Sem baixar aplicativo.
         </p>
         <div className="mt-5 grid gap-2.5">
           <Link
             href={`${base}/ajuda`}
             className="group flex h-14 items-center justify-between rounded-2xl bg-primary px-5 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition active:scale-[0.98]"
           >
-            Preciso de ajuda
+            Falar com o assistente
             <ArrowRight className="size-5 transition-transform group-hover:translate-x-0.5" aria-hidden />
           </Link>
           <Link
             href={`${base}/ajuda?voz=1`}
             className="glass-subtle flex h-12 items-center justify-center gap-2 rounded-2xl text-sm font-medium transition active:scale-[0.98]"
           >
-            <Mic className="size-4" aria-hidden /> Prefiro falar por voz
+            <Mic className="size-4" aria-hidden /> Conversar por voz
           </Link>
         </div>
       </GlassCard>
@@ -51,7 +51,7 @@ export default async function StoreHomePage({ params }: PageProps<"/[loja]">) {
 
       <section aria-labelledby="comuns" className="space-y-2.5">
         <h2 id="comuns" className="px-1 text-sm font-semibold text-muted-foreground">
-          Problemas mais comuns
+          Atalhos rápidos
         </h2>
         <div className="grid grid-cols-2 gap-2.5">
           {chips.map((p) => (

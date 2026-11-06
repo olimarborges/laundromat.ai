@@ -127,7 +127,7 @@ export function StartForm({
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">
-          O que aconteceu? <span className="font-normal text-muted-foreground">(opcional)</span>
+          Sobre o que você quer falar? <span className="font-normal text-muted-foreground">(opcional)</span>
         </legend>
         <div className="flex flex-wrap gap-2" role="radiogroup">
           {PROBLEM_LIST.map((p) => {

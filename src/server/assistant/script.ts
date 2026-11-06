@@ -45,7 +45,7 @@ const ICON = { confirmed: "✔", not_confirmed: "✖", unavailable: "–" } as c
 export async function scriptReply(ctx: AssistantContext, userText: string, isFirst: boolean): Promise<string> {
   const lines: string[] = [];
   const name = ctx.conversation.visitor_name?.split(" ")[0] ?? "";
-  if (isFirst) lines.push(`Oi${name ? `, ${name}` : ""}! Sou o assistente virtual da ${ctx.store.name}.`);
+  if (isFirst) lines.push(`Oi${name ? `, ${name}` : ""}! Boas-vindas à ${ctx.store.name}. Sou o assistente virtual e estou aqui para ajudar no que precisar.`);
 
   // Código de máquina na mensagem? (ex.: "L1")
   const code = userText.match(/\b([LS]\s?\d)\b/i)?.[1]?.replace(/\s/, "");
@@ -73,7 +73,7 @@ export async function scriptReply(ctx: AssistantContext, userText: string, isFir
       lines.push(`**${kb[0].question}**\n${kb[0].answer}`);
       lines.push("Isso resolve? Se não, escolha um dos problemas abaixo.");
     } else {
-      lines.push("Me conte o que aconteceu ou escolha um dos problemas mais comuns abaixo.");
+      lines.push("Em que posso te ajudar? Me conte com suas palavras ou escolha um dos atalhos abaixo.");
     }
     return lines.join("\n\n");
   }
