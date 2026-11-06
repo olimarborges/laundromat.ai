@@ -132,7 +132,13 @@ export async function scriptReply(ctx: AssistantContext, userText: string, isFir
     return lines.join("\n\n");
   }
 
-  if (contradicted) {
+  if (problem === "maquininha_travada") {
+    lines.push(
+      verification.payment === "confirmed"
+        ? "Atenção: a última cobrança **passou**. Não pague de novo: se a máquina não liberar, eu chamo o lojista."
+        : "Boa notícia: nenhuma cobrança passou, então pode pagar de novo sem risco de cobrança em dobro. Para destravar:",
+    );
+  } else if (contradicted) {
     lines.push("Pelas conferências, a máquina não apresentou falha. Tente assim:");
   }
   lines.push(def.steps.map((s, i) => `${i + 1}. ${s}`).join("\n"));
