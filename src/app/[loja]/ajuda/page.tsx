@@ -11,7 +11,7 @@ export default async function AjudaPage({ params, searchParams }: PageProps<"/[l
     <div className="space-y-4">
       <div className="px-1">
         <h1 className="text-2xl font-semibold tracking-tight">Como podemos te ajudar?</h1>
-        <p className="text-sm text-muted-foreground">Diga seu nome e, se quiser, o assunto. Depois é só conversar.</p>
+        <p className="text-sm text-muted-foreground">Leva poucos segundos. Depois é só conversar.</p>
       </div>
       <GlassCard tone="strong" padding="lg">
         <Suspense fallback={<FormSkeleton />}>

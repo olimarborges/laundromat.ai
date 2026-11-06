@@ -4,6 +4,7 @@ import { CheckCircle2, ChevronRight, CircleUserRound, Gift, LayoutDashboard, Mes
 import { GlassCard } from "@/components/glass/glass-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { ProfileForm } from "@/components/cliente/profile-form";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/server/auth";
 import { PROBLEMS, isProblemType } from "@/domain/problems";
@@ -99,6 +100,8 @@ async function Account() {
           <p className="mt-1.5 text-xs text-muted-foreground">200 pontos = 1 lavagem grátis (regra a definir com a loja)</p>
         </div>
       </GlassCard>
+
+      <ProfileForm name={user.profile?.full_name ?? null} phone={user.profile?.phone ?? null} email={user.email} />
 
       <section className="space-y-2">
         <h2 className="px-1 text-sm font-semibold text-muted-foreground">Seus atendimentos</h2>

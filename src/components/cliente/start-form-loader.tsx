@@ -27,6 +27,7 @@ export async function StartFormLoader({
       defaultProblem={one(sp.problema)}
       defaultName={user?.profile?.full_name ?? undefined}
       defaultPhone={user?.profile?.phone ?? undefined}
+      loggedIn={Boolean(user)}
       voice={one(sp.voz) === "1"}
     />
   );

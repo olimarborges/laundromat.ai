@@ -1,6 +1,6 @@
 "use client";
 import { useActionState, useState } from "react";
-import { ArrowRight, Loader2, Mic, WashingMachine, Wind } from "lucide-react";
+import { ArrowRight, Loader2, Mic, UserRoundCheck, WashingMachine, Wind } from "lucide-react";
 import { startConversation, type StartState } from "@/app/[loja]/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ export function StartForm({
   defaultProblem,
   defaultName,
   defaultPhone,
+  loggedIn = false,
   voice,
 }: {
   storeSlug: string;
@@ -32,12 +33,20 @@ export function StartForm({
   defaultProblem?: string;
   defaultName?: string;
   defaultPhone?: string;
+  /** Logado: usa nome/telefone do cadastro e só pede o que falta. */
+  loggedIn?: boolean;
   voice?: boolean;
 }) {
   const [state, action, pending] = useActionState<StartState, FormData>(startConversation, {});
   const [machine, setMachine] = useState(defaultMachine ?? "");
   const [problem, setProblem] = useState(defaultProblem ?? "");
   const [phone, setPhone] = useState(maskPhone(defaultPhone ?? ""));
+  const [editing, setEditing] = useState(false);
+  const hasName = Boolean(defaultName?.trim());
+  const hasPhone = (defaultPhone ?? "").replace(/\D/g, "").length >= 10;
+  // Erro do servidor num campo "escondido" (ex.: telefone do cadastro inválido) → mostra o campo.
+  const showName = !loggedIn || editing || !hasName || Boolean(state.fieldErrors?.name);
+  const showPhone = !loggedIn || editing || !hasPhone || Boolean(state.fieldErrors?.phone);
 
   return (
     <form action={action} className="space-y-5" noValidate>
@@ -46,53 +55,89 @@ export function StartForm({
       <input type="hidden" name="problem" value={problem} />
       <input type="hidden" name="voice" value={voice ? "1" : ""} />
 
-      <div className="grid gap-3.5">
-        <div className="grid gap-1.5">
-          <Label htmlFor="name">Seu nome</Label>
-          <Input
-            id="name"
-            name="name"
-            autoComplete="given-name"
-            defaultValue={defaultName}
-            placeholder="Como podemos te chamar?"
-            className="h-12 rounded-xl bg-background/70 text-base"
-            aria-invalid={Boolean(state.fieldErrors?.name)}
-            aria-describedby={state.fieldErrors?.name ? "name-error" : undefined}
-            required
-          />
-          {state.fieldErrors?.name ? (
-            <p id="name-error" role="alert" className="text-sm text-destructive">
-              {state.fieldErrors.name}
-            </p>
+      {loggedIn && !showName && !showPhone ? (
+        <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/6 p-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+            <UserRoundCheck className="size-5" aria-hidden />
+          </span>
+          <p className="min-w-0 flex-1 text-sm leading-snug">
+            Você será atendido como <span className="font-semibold">{defaultName}</span>
+            <span className="block text-xs text-muted-foreground tabular-nums">{maskPhone(defaultPhone ?? "")}</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="shrink-0 rounded-lg px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary/10"
+          >
+            Alterar
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-3.5">
+          {loggedIn && !editing ? (
+            <p className="text-sm text-muted-foreground">Falta só {!hasName && !hasPhone ? "seu nome e celular" : !hasName ? "seu nome" : "seu celular"}. Guardamos no seu cadastro para as próximas vezes.</p>
+          ) : null}
+          {showName ? (
+            <div className="grid gap-1.5">
+              <Label htmlFor="name">Seu nome</Label>
+              <Input
+                id="name"
+                name="name"
+                autoComplete="given-name"
+                defaultValue={defaultName}
+                placeholder="Como podemos te chamar?"
+                className="h-12 rounded-xl bg-background/70 text-base"
+                aria-invalid={Boolean(state.fieldErrors?.name)}
+                aria-describedby={state.fieldErrors?.name ? "name-error" : undefined}
+                required
+              />
+              {state.fieldErrors?.name ? (
+                <p id="name-error" role="alert" className="text-sm text-destructive">
+                  {state.fieldErrors.name}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {showPhone ? (
+            <div className="grid gap-1.5">
+              <Label htmlFor="phone">Celular (para receber a resposta)</Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel-national"
+                value={phone}
+                onChange={(e) => setPhone(maskPhone(e.target.value))}
+                placeholder="(51) 99999-9999"
+                className="h-12 rounded-xl bg-background/70 text-base tabular-nums"
+                aria-invalid={Boolean(state.fieldErrors?.phone)}
+                aria-describedby={state.fieldErrors?.phone ? "phone-error" : "phone-help"}
+                required
+              />
+              {state.fieldErrors?.phone ? (
+                <p id="phone-error" role="alert" className="text-sm text-destructive">
+                  {state.fieldErrors.phone}
+                </p>
+              ) : (
+                <p id="phone-help" className="text-xs text-muted-foreground">
+                  {loggedIn ? "Fica salvo no seu cadastro." : "Usado só neste atendimento. Sem cadastro."}
+                </p>
+              )}
+            </div>
+          ) : null}
+          {loggedIn ? (
+            editing ? (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="saveProfile" value="1" defaultChecked className="size-4 accent-[var(--primary)]" />
+                Salvar no meu cadastro
+              </label>
+            ) : (
+              <input type="hidden" name="saveProfile" value="1" />
+            )
           ) : null}
         </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="phone">Celular (para receber a resposta)</Label>
-          <Input
-            id="phone"
-            name="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel-national"
-            value={phone}
-            onChange={(e) => setPhone(maskPhone(e.target.value))}
-            placeholder="(51) 99999-9999"
-            className="h-12 rounded-xl bg-background/70 text-base tabular-nums"
-            aria-invalid={Boolean(state.fieldErrors?.phone)}
-            aria-describedby={state.fieldErrors?.phone ? "phone-error" : "phone-help"}
-            required
-          />
-          {state.fieldErrors?.phone ? (
-            <p id="phone-error" role="alert" className="text-sm text-destructive">
-              {state.fieldErrors.phone}
-            </p>
-          ) : (
-            <p id="phone-help" className="text-xs text-muted-foreground">
-              Usado só neste atendimento. Sem cadastro.
-            </p>
-          )}
-        </div>
-      </div>
+      )}
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">
