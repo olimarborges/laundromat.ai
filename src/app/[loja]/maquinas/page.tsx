@@ -41,7 +41,7 @@ async function Machines({ store }: { store: StoreRow }) {
         <h2 className="text-lg font-semibold">Disponível para quem tem conta</h2>
         <p className="text-sm text-muted-foreground">
           Por segurança da loja, a consulta das máquinas é só para clientes cadastrados. Crie sua conta em segundos com
-          Google ou e-mail e ganhe pontos a cada uso.
+          seu e-mail e ganhe pontos a cada uso.
         </p>
         <Link
           href={`/entrar?next=/${store.slug}/maquinas`}

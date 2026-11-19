@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Gift, History, LayoutGrid, Store } from "lucide-react";
 import { GlassCard } from "@/components/glass/glass-card";
 import { LoginForm } from "@/components/auth/login-form";
+import { isGoogleLoginEnabled } from "@/server/auth-providers";
 
 export const metadata = { title: "Entrar" };
 
@@ -41,7 +42,7 @@ export default function EntrarPage({ searchParams }: PageProps<"/entrar">) {
 }
 
 async function LoginWithNext({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const sp = await searchParams;
+  const [sp, google] = await Promise.all([searchParams, isGoogleLoginEnabled()]);
   const next = typeof sp.next === "string" && sp.next.startsWith("/") ? sp.next : "/conta";
   return (
     <>
@@ -50,7 +51,7 @@ async function LoginWithNext({ searchParams }: { searchParams: Promise<Record<st
           O link expirou ou é inválido. Peça um novo.
         </p>
       ) : null}
-      <LoginForm next={next} />
+      <LoginForm next={next} showGoogle={google} />
     </>
   );
 }

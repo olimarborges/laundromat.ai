@@ -19,7 +19,16 @@ function GoogleIcon() {
   );
 }
 
-export function LoginForm({ next = "/conta", allowPassword = false }: { next?: string; allowPassword?: boolean }) {
+export function LoginForm({
+  next = "/conta",
+  allowPassword = false,
+  showGoogle = false,
+}: {
+  next?: string;
+  allowPassword?: boolean;
+  /** Só quando o provedor Google estiver ativo no Supabase. */
+  showGoogle?: boolean;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,6 +73,8 @@ export function LoginForm({ next = "/conta", allowPassword = false }: { next?: s
 
   return (
     <div className="space-y-4">
+      {showGoogle ? (
+        <>
       <button
         type="button"
         onClick={google}
@@ -75,6 +86,8 @@ export function LoginForm({ next = "/conta", allowPassword = false }: { next?: s
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <Separator className="flex-1" /> ou <Separator className="flex-1" />
       </div>
+        </>
+      ) : null}
       <form onSubmit={submit} className="space-y-3">
         <div className="grid gap-1.5">
           <Label htmlFor="email">E-mail</Label>
